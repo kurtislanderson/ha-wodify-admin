@@ -1,0 +1,24 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Configure Wodify",
+        "description": "Enter your Wodify credentials and notification preferences.",
+        "data": {
+          "username": "Username",
+          "password": "Password",
+          "gym_url": "Gym URL",
+          "before_class_notification": "Before class notification (minutes)",
+          "after_block_notification": "After block notification (minutes)"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to Wodify. Please check your credentials and gym URL.",
+      "unknown": "Unexpected error occurred."
+    },
+    "abort": {
+      "already_configured": "This Wodify account is already configured."
+    }
+  }
+}
