@@ -1,0 +1,64 @@
+refresh_now:
+  name: Refresh Now
+  description: Force an immediate refresh of class data from the Wodify API.
+  fields:
+    entry_id:
+      name: Config Entry ID
+      description: The ID of the Wodify config entry to refresh.
+      required: true
+      selector:
+        text:
+
+set_filter:
+  name: Set Filter
+  description: Update location and program filters for the integration.
+  fields:
+    entry_id:
+      name: Config Entry ID
+      description: The ID of the Wodify config entry to update.
+      required: true
+      selector:
+        text:
+    locations:
+      name: Locations
+      description: List of gym locations to track.
+      required: true
+      selector:
+        object:
+    programs:
+      name: Programs
+      description: List of programs to include in the schedule.
+      required: true
+      selector:
+        object:
+
+set_event_timing:
+  name: Set Event Timing
+  description: Update the timing for notification events.
+  fields:
+    entry_id:
+      name: Config Entry ID
+      description: The ID of the Wodify config entry to update.
+      required: true
+      selector:
+        text:
+    before_class_minutes:
+      name: Before Class Minutes
+      description: Minutes before class to fire the notification event (5-60).
+      required: false
+      default: 15
+      selector:
+        number:
+          min: 5
+          max: 60
+          unit_of_measurement: minutes
+    after_block_minutes:
+      name: After Block Minutes
+      description: Minutes after class block ends to fire the notification event (5-60).
+      required: false
+      default: 15
+      selector:
+        number:
+          min: 5
+          max: 60
+          unit_of_measurement: minutes

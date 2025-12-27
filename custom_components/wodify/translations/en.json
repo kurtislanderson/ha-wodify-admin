@@ -1,0 +1,161 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Wodify API Authentication",
+        "description": "Enter your Wodify API key to connect to your gym account.",
+        "data": {
+          "api_key": "API Key"
+        }
+      },
+      "locations": {
+        "title": "Select Locations",
+        "description": "Choose which gym locations to track. You can select multiple locations.",
+        "data": {
+          "locations": "Locations"
+        }
+      },
+      "programs": {
+        "title": "Select Programs",
+        "description": "Choose which programs to include in your schedule. You can select multiple programs.",
+        "data": {
+          "programs": "Programs"
+        }
+      },
+      "options": {
+        "title": "Additional Options",
+        "description": "Configure update frequency and event notification timing.",
+        "data": {
+          "update_interval": "Update interval (minutes)",
+          "before_class_minutes": "Minutes before class to notify",
+          "after_block_minutes": "Minutes after class block ends to notify"
+        }
+      },
+      "reauth": {
+        "title": "Re-authenticate Wodify",
+        "description": "Your Wodify API key is no longer valid. Please enter a new API key.",
+        "data": {
+          "api_key": "API Key"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to Wodify API. Please check your internet connection.",
+      "invalid_auth": "Invalid API key. Please check your credentials.",
+      "no_locations": "Please select at least one location.",
+      "no_programs": "Please select at least one program.",
+      "invalid_update_interval": "Update interval must be between 1 and 60 minutes.",
+      "invalid_before_minutes": "Before class minutes must be between 5 and 60.",
+      "invalid_after_minutes": "After block minutes must be between 5 and 60.",
+      "unknown": "Unexpected error occurred. Please check the logs for details."
+    },
+    "abort": {
+      "already_configured": "This Wodify account is already configured.",
+      "reauth_successful": "Re-authentication was successful."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Wodify Options",
+        "description": "Adjust your Wodify integration settings.",
+        "data": {
+          "update_interval": "Update interval (minutes)",
+          "before_class_minutes": "Minutes before class to notify",
+          "after_block_minutes": "Minutes after class block ends to notify",
+          "locations": "Locations",
+          "programs": "Programs"
+        }
+      }
+    },
+    "error": {
+      "no_locations": "Please select at least one location.",
+      "no_programs": "Please select at least one program.",
+      "invalid_update_interval": "Update interval must be between 1 and 60 minutes.",
+      "invalid_before_minutes": "Before class minutes must be between 5 and 60.",
+      "invalid_after_minutes": "After block minutes must be between 5 and 60."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "next_class": {
+        "name": "Next Class"
+      }
+    },
+    "binary_sensor": {
+      "class_ongoing": {
+        "name": "Class Ongoing"
+      }
+    },
+    "calendar": {
+      "classes": {
+        "name": "Classes"
+      }
+    }
+  },
+  "services": {
+    "refresh_now": {
+      "name": "Refresh Now",
+      "description": "Force an immediate refresh of class data.",
+      "fields": {
+        "entry_id": {
+          "name": "Config Entry ID",
+          "description": "The ID of the Wodify config entry to refresh."
+        }
+      }
+    },
+    "set_filter": {
+      "name": "Set Filter",
+      "description": "Update location and program filters.",
+      "fields": {
+        "entry_id": {
+          "name": "Config Entry ID",
+          "description": "The ID of the Wodify config entry to update."
+        },
+        "locations": {
+          "name": "Locations",
+          "description": "List of locations to track."
+        },
+        "programs": {
+          "name": "Programs",
+          "description": "List of programs to include."
+        }
+      }
+    },
+    "set_event_timing": {
+      "name": "Set Event Timing",
+      "description": "Update event notification timing.",
+      "fields": {
+        "entry_id": {
+          "name": "Config Entry ID",
+          "description": "The ID of the Wodify config entry to update."
+        },
+        "before_class_minutes": {
+          "name": "Before Class Minutes",
+          "description": "Minutes before class to send notification (5-60)."
+        },
+        "after_block_minutes": {
+          "name": "After Block Minutes",
+          "description": "Minutes after class block to send notification (5-60)."
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "entry_not_found": {
+      "message": "Config entry {entry_id} not found"
+    },
+    "no_locations": {
+      "message": "At least one location must be specified"
+    },
+    "no_programs": {
+      "message": "At least one program must be specified"
+    },
+    "invalid_before_minutes": {
+      "message": "before_class_minutes must be between {min} and {max}"
+    },
+    "invalid_after_minutes": {
+      "message": "after_block_minutes must be between {min} and {max}"
+    }
+  }
+}

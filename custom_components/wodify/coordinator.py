@@ -1,0 +1,226 @@
+"""Coordinators and helpers for the Wodify integration."""
+
+from __future__ import annotations
+
+import logging
+from collections.abc import Callable, Iterable
+from datetime import datetime, timedelta
+from typing import Any
+
+from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ConfigEntryAuthFailed
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.util import dt as dt_util
+
+from .api import ApiAuthError, ApiError, WodifyAPI
+from .const import BLOCK_GAP_THRESHOLD, DOMAIN
+from .models import WodifyClass
+
+_LOGGER = logging.getLogger(__name__)
+
+
+def _coerce_datetime(value: Any) -> datetime:
+    """Best effort conversion to a datetime object."""
+    if isinstance(value, datetime):
+        return value
+    raise TypeError("Value must be a datetime")
+
+
+def _get_value(item: Any, getter: Callable[[Any], Any], *fallbacks: str) -> Any:
+    """Return attribute or dictionary value using provided fallbacks."""
+    if isinstance(item, dict):
+        for key in fallbacks:
+            if key in item:
+                return item[key]
+        return None
+    for key in fallbacks:
+        if hasattr(item, key):
+            return getattr(item, key)
+    return getter(item)
+
+
+def detect_class_blocks(classes: Iterable[Any]) -> list[list[Any]]:
+    """Group back-to-back classes into contiguous blocks.
+
+    The helper accepts either dictionaries (used by the light-weight coordinator
+    tests) or :class:`WodifyClass` instances from the main coordinator.
+    """
+
+    # Normalise and filter cancelled classes up-front
+    active_items: list[Any] = []
+    for entry in classes:
+        is_cancelled = bool(
+            _get_value(entry, lambda _: False, "is_cancelled", "cancelled")
+        )
+        if is_cancelled:
+            continue
+        start = _get_value(entry, lambda _: None, "start", "start_time")
+        end = _get_value(entry, lambda _: None, "end", "end_time")
+        if start is None or end is None:
+            _LOGGER.debug("Skipping class without start/end: %s", entry)
+            continue
+        active_items.append(entry)
+
+    if not active_items:
+        return []
+
+    active_items.sort(
+        key=lambda item: _get_value(item, lambda _: datetime.min, "start", "start_time")
+    )
+
+    blocks: list[list[Any]] = []
+    current_block: list[Any] = [active_items[0]]
+    block_end = _coerce_datetime(
+        _get_value(active_items[0], lambda _: datetime.min, "end", "end_time")
+    )
+
+    for current in active_items[1:]:
+        current_start = _coerce_datetime(
+            _get_value(current, lambda _: datetime.max, "start", "start_time")
+        )
+        current_end = _coerce_datetime(
+            _get_value(current, lambda _: datetime.max, "end", "end_time")
+        )
+
+        gap_minutes = (current_start - block_end).total_seconds() / 60
+
+        # Start a new block when the next class is separated from the current
+        # block by more than the configured threshold, either because there is a
+        # large gap or the classes overlap by a significant amount (e.g. classes
+        # running in parallel in different locations).
+        if gap_minutes > BLOCK_GAP_THRESHOLD or gap_minutes < -BLOCK_GAP_THRESHOLD:
+            blocks.append(current_block)
+            current_block = [current]
+            block_end = current_end
+            continue
+
+        current_block.append(current)
+        if current_end > block_end:
+            block_end = current_end
+
+    blocks.append(current_block)
+    return blocks
+
+
+class WodifyDataUpdateCoordinator(DataUpdateCoordinator[list[WodifyClass]]):
+    """Coordinator that fetches classes through the API client."""
+
+    # Maximum number of upcoming classes to enrich with coach info
+    MAX_COACH_ENRICHMENT = 10
+
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        api: WodifyAPI,
+        locations: list[str],
+        programs: list[str],
+        update_interval: int,
+    ) -> None:
+        """Initialise the coordinator."""
+
+        self.api = api
+        self.locations = locations
+        self.programs = programs
+        self.event_manager: Any | None = None
+        self.last_data: dict[str, WodifyClass] = {}
+
+        super().__init__(
+            hass,
+            _LOGGER,
+            name=DOMAIN,
+            update_interval=timedelta(minutes=update_interval),
+        )
+
+    async def _enrich_with_coaches(
+        self, classes: list[WodifyClass]
+    ) -> list[WodifyClass]:
+        """Fetch coach info for upcoming classes.
+
+        Only enriches the next MAX_COACH_ENRICHMENT classes to limit API calls.
+        """
+        now = dt_util.now()
+        upcoming = [c for c in classes if c.start_time > now and not c.is_cancelled]
+        upcoming.sort(key=lambda c: c.start_time)
+
+        # Only enrich the next N classes to limit API calls
+        to_enrich = upcoming[: self.MAX_COACH_ENRICHMENT]
+
+        enriched_ids: set[str] = set()
+        for cls in to_enrich:
+            try:
+                full_data = await self.api.get_class(cls.id)
+                if full_data and "coaches" in full_data:
+                    # Re-parse the class with full data including coaches
+                    enriched = WodifyClass.from_api_response(full_data)
+                    # Replace in the original list
+                    for i, original in enumerate(classes):
+                        if original.id == cls.id:
+                            classes[i] = enriched
+                            enriched_ids.add(cls.id)
+                            break
+            except Exception as err:
+                _LOGGER.debug("Failed to enrich class %s with coach: %s", cls.id, err)
+
+        if enriched_ids:
+            _LOGGER.debug("Enriched %d classes with coach info", len(enriched_ids))
+
+        return classes
+
+    async def _async_update_data(self) -> list[WodifyClass]:
+        """Fetch classes from the Wodify API and detect cancellations."""
+
+        start_date = dt_util.now()
+        end_date = start_date + timedelta(days=7)
+
+        try:
+            classes = await self.api.search_classes(
+                start_date=start_date,
+                end_date=end_date,
+                location_names=self.locations if self.locations else None,
+                program_names=self.programs if self.programs else None,
+            )
+        except ApiAuthError as err:
+            raise ConfigEntryAuthFailed("Invalid API key") from err
+        except ApiError as err:
+            raise UpdateFailed(f"Error communicating with API: {err}") from err
+
+        # Sort classes chronologically for consistent behaviour
+        classes.sort(key=lambda cls: cls.start_time)
+
+        # Enrich upcoming classes with coach information
+        classes = await self._enrich_with_coaches(classes)
+
+        cancellations: list[WodifyClass] = []
+        active_classes: list[WodifyClass] = []
+
+        for cls in classes:
+            previous = self.last_data.get(cls.id)
+            if cls.is_cancelled:
+                if previous and not previous.is_cancelled:
+                    cancellations.append(cls)
+                continue
+            active_classes.append(cls)
+
+        # Track the most recent state for cancellation detection on next refresh
+        self.last_data = {cls.id: cls for cls in classes}
+
+        if cancellations:
+            for cancelled in cancellations:
+                _LOGGER.info(
+                    "Class %s (%s) was cancelled", cancelled.id, cancelled.name
+                )
+                if self.event_manager is not None:
+                    await self.event_manager.handle_class_cancelled(
+                        cancelled.id, cancelled
+                    )
+
+        return active_classes
+
+    async def async_set_filters(
+        self, locations: list[str], programs: list[str]
+    ) -> None:
+        """Update location and program filters then refresh."""
+
+        self.locations = locations
+        self.programs = programs
+        await self.async_request_refresh()
