@@ -4,6 +4,7 @@
   "codeowners": ["@kurtislanderson"],
   "config_flow": true,
   "documentation": "https://github.com/kurtislanderson/ha-wodify-admin",
+  "issue_tracker": "https://github.com/kurtislanderson/ha-wodify-admin/issues",
   "iot_class": "cloud_polling",
   "requirements": [],
   "version": "0.1.0-beta.3"

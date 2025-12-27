@@ -5,7 +5,9 @@
 [![License][license-shield]](LICENSE)
 [![hacs][hacs-shield]][hacs]
 
-A Home Assistant integration for Wodify gym management system. Track classes, receive notifications, and automate your home based on your gym schedule.
+A Home Assistant integration for Wodify class schedules. Use your Wodify schedule to power automations in your gym with Home Assistant.
+
+> **Note**: This integration requires Wodify API access, which is only available to gym owners and Wodify administrators.
 
 ## Features
 
