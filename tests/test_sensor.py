@@ -74,7 +74,7 @@ class TestNextClassSensor:
             # Get expected time string using the same timezone conversion as the sensor
             start_local = dt_util.as_local(datetime(2024, 1, 1, 17, 30, tzinfo=UTC))
             expected_time = start_local.strftime("%I:%M %p").lstrip("0")
-            assert sensor.native_value == f"CrossFit at {expected_time} with Coach Mike"
+            assert sensor.native_value == f"CrossFit with Coach Mike at {expected_time}"
 
     async def test_sensor_state_different_formats(
         self,
@@ -103,7 +103,7 @@ class TestNextClassSensor:
             # Get expected time string using the same timezone conversion as the sensor
             start_local = dt_util.as_local(datetime(2024, 1, 1, 6, 0, tzinfo=UTC))
             expected_time = start_local.strftime("%I:%M %p").lstrip("0")
-            assert sensor.native_value == f"Morning CrossFit at {expected_time} with Coach Tim"
+            assert sensor.native_value == f"Morning CrossFit with Coach Tim at {expected_time}"
 
     async def test_sensor_attributes(
         self,
