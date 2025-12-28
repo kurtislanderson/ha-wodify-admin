@@ -66,9 +66,7 @@ def mock_coordinator_with_events(mock_coordinator, sample_classes_for_events):
 class TestEventManager:
     """Test event manager."""
 
-    async def test_event_manager_initialization(
-        self, hass, mock_coordinator_with_events
-    ):
+    async def test_event_manager_initialization(self, hass, mock_coordinator_with_events):
         """Test event manager initialization."""
         event_manager = WodifyEventManager(hass, mock_coordinator_with_events, 15, 15)
 
@@ -333,9 +331,7 @@ class TestEventManager:
             delay = mock_call_later.call_args[0][0]
             assert delay <= 1  # Should fire immediately or within 1 second
 
-    async def test_event_manager_logging(
-        self, hass, mock_coordinator_with_events, caplog
-    ):
+    async def test_event_manager_logging(self, hass, mock_coordinator_with_events, caplog):
         """Test event manager logging."""
         event_manager = WodifyEventManager(hass, mock_coordinator_with_events, 15, 15)
 
@@ -348,8 +344,6 @@ class TestEventManager:
         assert "Scheduled block_done after Back-to-Back CrossFit" in caplog.text
 
         # Test cancellation logging
-        await event_manager.handle_class_cancelled(
-            "1", mock_coordinator_with_events.data[0]
-        )
+        await event_manager.handle_class_cancelled("1", mock_coordinator_with_events.data[0])
         assert "Cancelled pending starts_soon event for class 1" in caplog.text
         assert "Fired cancellation event for class 1" in caplog.text

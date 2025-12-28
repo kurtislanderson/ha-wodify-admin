@@ -45,7 +45,10 @@ class TestNextClassSensor:
     """Test next class sensor."""
 
     async def test_sensor_properties(
-        self, hass, coordinator_with_data, mock_config_entry  # noqa: ARG002
+        self,
+        hass,  # noqa: ARG002
+        coordinator_with_data,
+        mock_config_entry,  # noqa: ARG002
     ):
         """Test sensor properties."""
         sensor = WodifyNextClassSensor(coordinator_with_data, mock_config_entry)
@@ -64,14 +67,15 @@ class TestNextClassSensor:
         with patch("homeassistant.util.dt.now") as mock_now:
             mock_now.return_value = datetime(2024, 1, 1, 12, 0, tzinfo=UTC)
             # Get expected time string using the same timezone conversion as the sensor
-            start_local = dt_util.as_local(
-                datetime(2024, 1, 1, 17, 30, tzinfo=UTC)
-            )
+            start_local = dt_util.as_local(datetime(2024, 1, 1, 17, 30, tzinfo=UTC))
             expected_time = start_local.strftime("%I:%M %p").lstrip("0")
             assert sensor.native_value == f"CrossFit at {expected_time} with Coach Mike"
 
     async def test_sensor_state_different_formats(
-        self, hass, coordinator_with_data, mock_config_entry  # noqa: ARG002
+        self,
+        hass,  # noqa: ARG002
+        coordinator_with_data,
+        mock_config_entry,  # noqa: ARG002
     ):
         """Test sensor state with different time formats."""
         sensor = WodifyNextClassSensor(coordinator_with_data, mock_config_entry)
@@ -92,17 +96,15 @@ class TestNextClassSensor:
         with patch("homeassistant.util.dt.now") as mock_now:
             mock_now.return_value = datetime(2024, 1, 1, 5, 0, tzinfo=UTC)
             # Get expected time string using the same timezone conversion as the sensor
-            start_local = dt_util.as_local(
-                datetime(2024, 1, 1, 6, 0, tzinfo=UTC)
-            )
+            start_local = dt_util.as_local(datetime(2024, 1, 1, 6, 0, tzinfo=UTC))
             expected_time = start_local.strftime("%I:%M %p").lstrip("0")
-            assert (
-                sensor.native_value
-                == f"Morning CrossFit at {expected_time} with Coach Tim"
-            )
+            assert sensor.native_value == f"Morning CrossFit at {expected_time} with Coach Tim"
 
     async def test_sensor_attributes(
-        self, hass, coordinator_with_data, mock_config_entry  # noqa: ARG002
+        self,
+        hass,  # noqa: ARG002
+        coordinator_with_data,
+        mock_config_entry,  # noqa: ARG002
     ):
         """Test sensor attributes."""
         sensor = WodifyNextClassSensor(coordinator_with_data, mock_config_entry)
@@ -124,7 +126,10 @@ class TestNextClassSensor:
         assert attrs["is_full"] is False
 
     async def test_sensor_attributes_full_class(
-        self, hass, coordinator_with_data, mock_config_entry  # noqa: ARG002
+        self,
+        hass,  # noqa: ARG002
+        coordinator_with_data,
+        mock_config_entry,  # noqa: ARG002
     ):
         """Test sensor attributes when class is full."""
         sensor = WodifyNextClassSensor(coordinator_with_data, mock_config_entry)
@@ -149,7 +154,10 @@ class TestNextClassSensor:
         assert sensor.extra_state_attributes == {}
 
     async def test_sensor_skips_past_classes(
-        self, hass, mock_coordinator, mock_config_entry  # noqa: ARG002
+        self,
+        hass,  # noqa: ARG002
+        mock_coordinator,
+        mock_config_entry,  # noqa: ARG002
     ):
         """Test sensor skips classes that have already started."""
         mock_coordinator.data = [
@@ -186,7 +194,10 @@ class TestNextClassSensor:
             assert sensor.extra_state_attributes["class_id"] == "2"
 
     async def test_sensor_unavailable_on_coordinator_error(
-        self, hass, mock_coordinator, mock_config_entry  # noqa: ARG002
+        self,
+        hass,  # noqa: ARG002
+        mock_coordinator,
+        mock_config_entry,  # noqa: ARG002
     ):
         """Test sensor is unavailable when coordinator has no data."""
         mock_coordinator.data = None
@@ -208,7 +219,10 @@ class TestNextClassSensor:
         assert device_info["model"] == "Gym Schedule"
 
     async def test_sensor_entity_registry_settings(
-        self, hass, mock_coordinator, mock_config_entry  # noqa: ARG002
+        self,
+        hass,  # noqa: ARG002
+        mock_coordinator,
+        mock_config_entry,  # noqa: ARG002
     ):
         """Test sensor entity registry settings."""
         sensor = WodifyNextClassSensor(mock_coordinator, mock_config_entry)
@@ -242,11 +256,14 @@ class TestNextClassSensor:
         # Verify entities were added
         async_add_entities.assert_called_once()
         entities = async_add_entities.call_args[0][0]
-        assert len(entities) == 1
+        assert len(entities) == 3  # Next Class + Current Class + API Status
         assert isinstance(entities[0], WodifyNextClassSensor)
 
     async def test_sensor_state_updates_on_coordinator_update(
-        self, hass, coordinator_with_data, mock_config_entry  # noqa: ARG002
+        self,
+        hass,  # noqa: ARG002
+        coordinator_with_data,
+        mock_config_entry,  # noqa: ARG002
     ):
         """Test sensor updates when coordinator data changes."""
         sensor = WodifyNextClassSensor(coordinator_with_data, mock_config_entry)

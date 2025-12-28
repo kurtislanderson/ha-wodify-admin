@@ -85,23 +85,11 @@ def test_constants_values_reasonable():
     from custom_components.wodify import const
 
     # Update interval constraints
-    assert (
-        const.MIN_UPDATE_INTERVAL
-        < const.DEFAULT_UPDATE_INTERVAL
-        < const.MAX_UPDATE_INTERVAL
-    )
+    assert const.MIN_UPDATE_INTERVAL < const.DEFAULT_UPDATE_INTERVAL < const.MAX_UPDATE_INTERVAL
 
     # Event timing constraints
-    assert (
-        const.MIN_EVENT_MINUTES
-        < const.DEFAULT_BEFORE_CLASS_MINUTES
-        < const.MAX_EVENT_MINUTES
-    )
-    assert (
-        const.MIN_EVENT_MINUTES
-        < const.DEFAULT_AFTER_BLOCK_MINUTES
-        < const.MAX_EVENT_MINUTES
-    )
+    assert const.MIN_EVENT_MINUTES < const.DEFAULT_BEFORE_CLASS_MINUTES < const.MAX_EVENT_MINUTES
+    assert const.MIN_EVENT_MINUTES < const.DEFAULT_AFTER_BLOCK_MINUTES < const.MAX_EVENT_MINUTES
 
     # API constraints
     assert const.API_TIMEOUT > 0

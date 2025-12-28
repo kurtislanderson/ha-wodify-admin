@@ -45,12 +45,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     locations = entry.options.get(CONF_LOCATIONS, entry.data.get(CONF_LOCATIONS, []))
     programs = entry.options.get(CONF_PROGRAMS, entry.data.get(CONF_PROGRAMS, []))
     update_interval = entry.options.get(CONF_UPDATE_INTERVAL, DEFAULT_UPDATE_INTERVAL)
-    before_minutes = entry.options.get(
-        CONF_BEFORE_CLASS_MINUTES, DEFAULT_BEFORE_CLASS_MINUTES
-    )
-    after_minutes = entry.options.get(
-        CONF_AFTER_BLOCK_MINUTES, DEFAULT_AFTER_BLOCK_MINUTES
-    )
+    before_minutes = entry.options.get(CONF_BEFORE_CLASS_MINUTES, DEFAULT_BEFORE_CLASS_MINUTES)
+    after_minutes = entry.options.get(CONF_AFTER_BLOCK_MINUTES, DEFAULT_AFTER_BLOCK_MINUTES)
 
     # Create API client
     session = async_get_clientsession(hass)

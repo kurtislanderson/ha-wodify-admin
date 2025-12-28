@@ -67,9 +67,7 @@ class TestPerformance:
         update_duration = end_time - start_time
 
         # Should complete within 5 seconds (requirement)
-        assert update_duration < 5.0, (
-            f"Update took {update_duration:.2f}s, expected < 5s"
-        )
+        assert update_duration < 5.0, f"Update took {update_duration:.2f}s, expected < 5s"
 
         # Verify data was processed (returned, not coordinator.data)
         assert len(result) > 0
@@ -120,9 +118,7 @@ class TestPerformance:
         # Should use less than 50MB for large dataset (requirement)
         assert memory_mb < 50, f"Memory usage {memory_mb:.2f}MB, expected < 50MB"
 
-    async def test_event_scheduling_performance(
-        self, hass, mock_coordinator, large_dataset
-    ):
+    async def test_event_scheduling_performance(self, hass, mock_coordinator, large_dataset):
         """Test event scheduling performance with many classes."""
         from custom_components.wodify.events import WodifyEventManager
 
@@ -144,7 +140,10 @@ class TestPerformance:
         assert len(event_manager._block_end_events) > 0
 
     async def test_entity_update_performance(
-        self, hass, mock_coordinator, large_dataset  # noqa: ARG002
+        self,
+        hass,  # noqa: ARG002
+        mock_coordinator,
+        large_dataset,  # noqa: ARG002
     ):
         """Test entity state update performance."""
         from custom_components.wodify.sensor import WodifyNextClassSensor
@@ -204,9 +203,7 @@ class TestPerformance:
 
         # Run concurrent updates
         start_time = time.time()
-        await asyncio.gather(
-            *[coordinator._async_update_data() for coordinator in coordinators]
-        )
+        await asyncio.gather(*[coordinator._async_update_data() for coordinator in coordinators])
         end_time = time.time()
 
         total_duration = end_time - start_time
@@ -287,9 +284,7 @@ class TestPerformance:
         avg_time = duration / state_calculations
         assert avg_time < 0.01, f"Average state calculation took {avg_time * 1000:.2f}ms"
 
-    async def test_calendar_query_performance(
-        self, hass, mock_coordinator, large_dataset
-    ):
+    async def test_calendar_query_performance(self, hass, mock_coordinator, large_dataset):
         """Test calendar entity query performance."""
         from custom_components.wodify.calendar import WodifyCalendar
 

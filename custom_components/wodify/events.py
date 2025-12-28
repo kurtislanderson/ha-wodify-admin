@@ -134,9 +134,7 @@ class WodifyEventManager:
                 continue
             last_class: WodifyClass = block[-1]
 
-            block_end = last_class.end_time + timedelta(
-                minutes=self.after_block_minutes
-            )
+            block_end = last_class.end_time + timedelta(minutes=self.after_block_minutes)
             if block_end <= now:
                 continue
 
@@ -171,9 +169,7 @@ class WodifyEventManager:
             if wodify_class.end_time <= now:
                 continue
 
-            event_time = wodify_class.start_time - timedelta(
-                minutes=self.before_class_minutes
-            )
+            event_time = wodify_class.start_time - timedelta(minutes=self.before_class_minutes)
             delay = max(0.0, (event_time - now).total_seconds())
 
             def make_callback(cls: WodifyClass) -> Callable[[], None]:
@@ -223,9 +219,7 @@ class WodifyEventManager:
         last_class = block[-1]
         self._block_end_events.pop(last_class.id, None)
 
-        block_duration = int(
-            (last_class.end_time - first_class.start_time).total_seconds() // 60
-        )
+        block_duration = int((last_class.end_time - first_class.start_time).total_seconds() // 60)
 
         event_data = {
             "block_class_count": len(block),
@@ -246,9 +240,7 @@ class WodifyEventManager:
         self.after_block_minutes = after_minutes
         self.schedule_events()
 
-    async def handle_class_cancelled(
-        self, class_id: str, cancelled_class: WodifyClass
-    ) -> None:
+    async def handle_class_cancelled(self, class_id: str, cancelled_class: WodifyClass) -> None:
         """Handle cancellation notification from the coordinator."""
 
         scheduled = self._upcoming_events.pop(class_id, None)

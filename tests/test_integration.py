@@ -27,9 +27,7 @@ def persistent_api_mock(mock_api_responses):
 
         # Mock API for integration
         mock_api_instance = mock_api_init.return_value
-        mock_api_instance.search_classes = AsyncMock(
-            return_value=mock_api_responses["classes"]
-        )
+        mock_api_instance.search_classes = AsyncMock(return_value=mock_api_responses["classes"])
 
         yield mock_api_instance
 
@@ -51,9 +49,7 @@ async def setup_integration(
 
         # Mock API for integration
         mock_api_instance = mock_api_init.return_value
-        mock_api_instance.search_classes = AsyncMock(
-            return_value=mock_api_responses["classes"]
-        )
+        mock_api_instance.search_classes = AsyncMock(return_value=mock_api_responses["classes"])
 
         # Add entry and set up
         mock_config_entry.add_to_hass(hass)
@@ -122,7 +118,11 @@ class TestIntegration:
         assert state is not None
 
     async def test_reload_entry(
-        self, hass, mock_config_entry, mock_api_responses, persistent_api_mock  # noqa: ARG002
+        self,
+        hass,
+        mock_config_entry,
+        mock_api_responses,  # noqa: ARG002
+        persistent_api_mock,  # noqa: ARG002
     ):
         """Test reloading config entry."""
         # Using persistent_api_mock fixture to ensure mocks survive reload
@@ -144,7 +144,11 @@ class TestIntegration:
         assert new_state.state != STATE_UNAVAILABLE
 
     async def test_unload_entry(
-        self, hass, mock_config_entry, mock_api_responses, persistent_api_mock  # noqa: ARG002
+        self,
+        hass,
+        mock_config_entry,
+        mock_api_responses,  # noqa: ARG002
+        persistent_api_mock,  # noqa: ARG002
     ):
         """Test unloading config entry."""
         mock_config_entry.add_to_hass(hass)
@@ -167,9 +171,7 @@ class TestIntegration:
         # Verify data cleaned up
         assert mock_config_entry.entry_id not in hass.data.get(DOMAIN, {})
 
-    async def test_entity_registry_cleanup(
-        self, hass, mock_config_entry, mock_api_responses
-    ):
+    async def test_entity_registry_cleanup(self, hass, mock_config_entry, mock_api_responses):
         """Test entity registry is properly cleaned up."""
         await setup_integration(hass, mock_config_entry, mock_api_responses)
 
@@ -188,9 +190,7 @@ class TestIntegration:
         sensor_entity = ent_reg.async_get("sensor.next_class")
         assert sensor_entity is None
 
-    async def test_coordinator_updates_entities(
-        self, hass, mock_config_entry, mock_api_responses
-    ):
+    async def test_coordinator_updates_entities(self, hass, mock_config_entry, mock_api_responses):
         """Test coordinator updates propagate to entities."""
         await setup_integration(hass, mock_config_entry, mock_api_responses)
 
@@ -228,26 +228,18 @@ class TestIntegration:
             patch("custom_components.wodify.WodifyAPI") as mock_api_init,
         ):
             mock_api = mock_api_class.return_value
-            mock_api.get_programs = AsyncMock(
-                return_value=mock_api_responses["programs"]
-            )
-            mock_api.search_classes = AsyncMock(
-                return_value=mock_api_responses["classes"]
-            )
+            mock_api.get_programs = AsyncMock(return_value=mock_api_responses["programs"])
+            mock_api.search_classes = AsyncMock(return_value=mock_api_responses["classes"])
 
             mock_api_instance = mock_api_init.return_value
-            mock_api_instance.search_classes = AsyncMock(
-                return_value=mock_api_responses["classes"]
-            )
+            mock_api_instance.search_classes = AsyncMock(return_value=mock_api_responses["classes"])
 
             mock_config_entry.add_to_hass(hass)
             await hass.config_entries.async_setup(mock_config_entry.entry_id)
             await hass.async_block_till_done()
 
             coordinator = hass.data[DOMAIN][mock_config_entry.entry_id]["coordinator"]
-            event_manager = hass.data[DOMAIN][mock_config_entry.entry_id][
-                "event_manager"
-            ]
+            event_manager = hass.data[DOMAIN][mock_config_entry.entry_id]["event_manager"]
 
             # Verify coordinator has a listener (the event_manager)
             assert len(coordinator._listeners) >= 1
@@ -272,9 +264,7 @@ class TestIntegration:
             # (it may or may not have events scheduled depending on timing)
             assert event_manager is not None
 
-    async def test_event_system_integration(
-        self, hass, mock_config_entry, mock_api_responses
-    ):
+    async def test_event_system_integration(self, hass, mock_config_entry, mock_api_responses):
         """Test event system is properly integrated."""
         events_fired = []
 
@@ -301,9 +291,7 @@ class TestIntegration:
             patch("custom_components.wodify.WodifyAPI") as mock_api_init,
         ):
             mock_api = mock_api_class.return_value
-            mock_api.get_programs = AsyncMock(
-                return_value=mock_api_responses["programs"]
-            )
+            mock_api.get_programs = AsyncMock(return_value=mock_api_responses["programs"])
             mock_api.search_classes = AsyncMock(return_value=[upcoming_class])
 
             mock_api_instance = mock_api_init.return_value
@@ -314,9 +302,7 @@ class TestIntegration:
             await hass.async_block_till_done()
 
             # Get event manager
-            event_manager = hass.data[DOMAIN][mock_config_entry.entry_id][
-                "event_manager"
-            ]
+            event_manager = hass.data[DOMAIN][mock_config_entry.entry_id]["event_manager"]
 
             # Verify event manager exists and has the right timing values
             assert event_manager is not None
@@ -331,9 +317,7 @@ class TestIntegration:
             # Now there should be scheduled events
             assert len(event_manager._upcoming_events) > 0
 
-    async def test_service_integration(
-        self, hass, mock_config_entry, mock_api_responses
-    ):
+    async def test_service_integration(self, hass, mock_config_entry, mock_api_responses):
         """Test services work with integration."""
         await setup_integration(hass, mock_config_entry, mock_api_responses)
 
@@ -360,21 +344,13 @@ class TestIntegration:
         ):
             # Mock API for config flow
             mock_api = mock_api_class.return_value
-            mock_api.get_programs = AsyncMock(
-                return_value=mock_api_responses["programs"]
-            )
-            mock_api.search_classes = AsyncMock(
-                return_value=mock_api_responses["classes"]
-            )
+            mock_api.get_programs = AsyncMock(return_value=mock_api_responses["programs"])
+            mock_api.search_classes = AsyncMock(return_value=mock_api_responses["classes"])
 
             # Mock API for integration
             mock_api_instance = mock_api_init.return_value
-            mock_api_instance.search_classes = AsyncMock(
-                return_value=mock_api_responses["classes"]
-            )
-            mock_api_instance.get_programs = AsyncMock(
-                return_value=mock_api_responses["programs"]
-            )
+            mock_api_instance.search_classes = AsyncMock(return_value=mock_api_responses["classes"])
+            mock_api_instance.get_programs = AsyncMock(return_value=mock_api_responses["programs"])
 
             mock_config_entry.add_to_hass(hass)
             await hass.config_entries.async_setup(mock_config_entry.entry_id)
@@ -385,9 +361,7 @@ class TestIntegration:
             ]
 
             # Update options
-            result = await hass.config_entries.options.async_init(
-                mock_config_entry.entry_id
-            )
+            result = await hass.config_entries.options.async_init(mock_config_entry.entry_id)
 
             result = await hass.config_entries.options.async_configure(
                 result["flow_id"],
@@ -404,9 +378,7 @@ class TestIntegration:
 
             # After options change, event manager gets the updated values from config
             # Get the potentially new event_manager after reload
-            new_event_manager = hass.data[DOMAIN][mock_config_entry.entry_id][
-                "event_manager"
-            ]
+            new_event_manager = hass.data[DOMAIN][mock_config_entry.entry_id]["event_manager"]
             assert new_event_manager.before_class_minutes == 30
             assert new_event_manager.after_block_minutes == 20
 
@@ -465,10 +437,10 @@ class TestIntegration:
         # Verify entities have unique IDs
         ent_reg = er.async_get(hass)
         entities = er.async_entries_for_config_entry(ent_reg, entry1.entry_id)
-        assert len(entities) == 3  # sensor, binary_sensor, calendar
+        assert len(entities) == 5  # next_class, current_class, api_status, binary_sensor, calendar
 
         entities2 = er.async_entries_for_config_entry(ent_reg, entry2.entry_id)
-        assert len(entities2) == 3
+        assert len(entities2) == 5
 
         # Ensure no overlap
         entity1_ids = {e.unique_id for e in entities}

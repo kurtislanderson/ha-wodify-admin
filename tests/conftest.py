@@ -41,9 +41,7 @@ def allow_asyncio_shutdown_thread(monkeypatch: pytest.MonkeyPatch):
     def patched_enumerate() -> list[threading.Thread]:
         threads = original_enumerate()
         for thread in threads:
-            if "_run_safe_shutdown_loop" in thread.name and not thread.name.startswith(
-                "waitpid-"
-            ):
+            if "_run_safe_shutdown_loop" in thread.name and not thread.name.startswith("waitpid-"):
                 thread.name = f"waitpid-{thread.name}"
         return threads
 

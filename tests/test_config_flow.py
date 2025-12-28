@@ -189,9 +189,7 @@ class TestConfigFlow:
         # Verify entry was updated
         assert mock_config_entry.data[CONF_API_KEY] == "new_api_key"
 
-    async def test_reauth_flow_invalid_auth(
-        self, hass, mock_config_entry, mock_wodify_api
-    ):
+    async def test_reauth_flow_invalid_auth(self, hass, mock_config_entry, mock_wodify_api):
         """Test reauth flow with invalid credentials."""
         mock_config_entry.add_to_hass(hass)
         mock_wodify_api.get_programs.side_effect = ApiAuthError("Invalid API key")

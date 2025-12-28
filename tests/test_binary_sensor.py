@@ -46,7 +46,11 @@ class TestClassOngoingBinarySensor:
         assert sensor.available is True
 
     async def test_sensor_on_during_class(
-        self, hass, mock_coordinator, mock_config_entry, ongoing_class_data  # noqa: ARG002
+        self,
+        hass,  # noqa: ARG002
+        mock_coordinator,
+        mock_config_entry,
+        ongoing_class_data,  # noqa: ARG002
     ):
         """Test sensor is on during class."""
         mock_coordinator.data = ongoing_class_data
@@ -66,7 +70,11 @@ class TestClassOngoingBinarySensor:
             assert attrs["end_time"] == "2024-01-01T18:30:00"
 
     async def test_sensor_off_before_class(
-        self, hass, mock_coordinator, mock_config_entry, ongoing_class_data  # noqa: ARG002
+        self,
+        hass,  # noqa: ARG002
+        mock_coordinator,
+        mock_config_entry,
+        ongoing_class_data,  # noqa: ARG002
     ):
         """Test sensor is off before class starts."""
         mock_coordinator.data = ongoing_class_data
@@ -79,7 +87,11 @@ class TestClassOngoingBinarySensor:
             assert sensor.extra_state_attributes == {}
 
     async def test_sensor_off_after_class(
-        self, hass, mock_coordinator, mock_config_entry, ongoing_class_data  # noqa: ARG002
+        self,
+        hass,  # noqa: ARG002
+        mock_coordinator,
+        mock_config_entry,
+        ongoing_class_data,  # noqa: ARG002
     ):
         """Test sensor is off after class ends."""
         mock_coordinator.data = ongoing_class_data
@@ -92,7 +104,11 @@ class TestClassOngoingBinarySensor:
             assert sensor.extra_state_attributes == {}
 
     async def test_sensor_minutes_remaining_calculation(
-        self, hass, mock_coordinator, mock_config_entry, ongoing_class_data  # noqa: ARG002
+        self,
+        hass,  # noqa: ARG002
+        mock_coordinator,
+        mock_config_entry,
+        ongoing_class_data,  # noqa: ARG002
     ):
         """Test minutes remaining calculation during class."""
         mock_coordinator.data = ongoing_class_data
@@ -111,13 +127,13 @@ class TestClassOngoingBinarySensor:
             with patch("homeassistant.util.dt.now") as mock_now:
                 mock_now.return_value = current_time
                 assert sensor.is_on is True
-                assert (
-                    sensor.extra_state_attributes["minutes_remaining"]
-                    == expected_remaining
-                )
+                assert sensor.extra_state_attributes["minutes_remaining"] == expected_remaining
 
     async def test_sensor_multiple_overlapping_classes(
-        self, hass, mock_coordinator, mock_config_entry  # noqa: ARG002
+        self,
+        hass,  # noqa: ARG002
+        mock_coordinator,
+        mock_config_entry,  # noqa: ARG002
     ):
         """Test sensor with multiple overlapping classes (picks first ongoing)."""
         mock_coordinator.data = [
@@ -163,7 +179,10 @@ class TestClassOngoingBinarySensor:
         assert sensor.extra_state_attributes == {}
 
     async def test_sensor_unavailable_on_coordinator_error(
-        self, hass, mock_coordinator, mock_config_entry  # noqa: ARG002
+        self,
+        hass,  # noqa: ARG002
+        mock_coordinator,
+        mock_config_entry,  # noqa: ARG002
     ):
         """Test sensor is unavailable when coordinator has no data."""
         mock_coordinator.data = None
@@ -202,7 +221,11 @@ class TestClassOngoingBinarySensor:
         assert isinstance(entities[0], WodifyClassOngoingBinarySensor)
 
     async def test_sensor_icon_changes(
-        self, hass, mock_coordinator, mock_config_entry, ongoing_class_data  # noqa: ARG002
+        self,
+        hass,  # noqa: ARG002
+        mock_coordinator,
+        mock_config_entry,
+        ongoing_class_data,  # noqa: ARG002
     ):
         """Test sensor icon changes based on state."""
         mock_coordinator.data = ongoing_class_data
@@ -219,7 +242,10 @@ class TestClassOngoingBinarySensor:
             assert sensor.icon == "mdi:timer-off"
 
     async def test_sensor_state_updates_on_coordinator_update(
-        self, hass, mock_coordinator, mock_config_entry  # noqa: ARG002
+        self,
+        hass,  # noqa: ARG002
+        mock_coordinator,
+        mock_config_entry,  # noqa: ARG002
     ):
         """Test sensor updates when coordinator data changes."""
         sensor = WodifyClassOngoingBinarySensor(mock_coordinator, mock_config_entry)

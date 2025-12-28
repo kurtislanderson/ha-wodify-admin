@@ -150,7 +150,9 @@ class WodifyAPI:
                 break
 
             if "APIError" in payload or "HTTPCode" in payload:
-                error_msg = payload.get("UserMessage", payload.get("DeveloperMessage", "Unknown error"))
+                error_msg = payload.get(
+                    "UserMessage", payload.get("DeveloperMessage", "Unknown error")
+                )
                 _LOGGER.warning("Search API error: %s", error_msg)
                 break
 
@@ -239,9 +241,7 @@ class WodifyAPI:
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
-    async def _make_request(
-        self, endpoint: str, *, params: dict[str, Any] | None = None
-    ) -> Any:
+    async def _make_request(self, endpoint: str, *, params: dict[str, Any] | None = None) -> Any:
         """Rate limit and execute a request with retry logic."""
         url = f"{self.base_url}/{endpoint.lstrip('/')}"
 
@@ -283,9 +283,7 @@ class WodifyAPI:
                 now = loop.time()
             self._last_request_time = now
 
-    async def _execute_request(
-        self, url: str, *, params: dict[str, Any] | None = None
-    ) -> Any:
+    async def _execute_request(self, url: str, *, params: dict[str, Any] | None = None) -> Any:
         """Perform the HTTP request and return decoded JSON."""
         headers = {"x-api-key": self.api_key}
         try:

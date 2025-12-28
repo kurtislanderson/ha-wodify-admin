@@ -13,7 +13,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 from homeassistant.util import dt as dt_util
 
 from .api import ApiAuthError, ApiError, WodifyAPI
-from .const import BLOCK_GAP_THRESHOLD, DOMAIN
+from .const import BLOCK_GAP_THRESHOLD, CACHE_MAX_AGE_HOURS, DOMAIN
 from .models import WodifyClass
 
 _LOGGER = logging.getLogger(__name__)
@@ -49,9 +49,7 @@ def detect_class_blocks(classes: Iterable[Any]) -> list[list[Any]]:
     # Normalise and filter cancelled classes up-front
     active_items: list[Any] = []
     for entry in classes:
-        is_cancelled = bool(
-            _get_value(entry, lambda _: False, "is_cancelled", "cancelled")
-        )
+        is_cancelled = bool(_get_value(entry, lambda _: False, "is_cancelled", "cancelled"))
         if is_cancelled:
             continue
         start = _get_value(entry, lambda _: None, "start", "start_time")
@@ -124,6 +122,12 @@ class WodifyDataUpdateCoordinator(DataUpdateCoordinator[list[WodifyClass]]):
         self.event_manager: Any | None = None
         self.last_data: dict[str, WodifyClass] = {}
 
+        # Cache for API status tracking
+        self._cached_data: list[WodifyClass] = []
+        self._api_connected: bool = True
+        self._last_error: str | None = None
+        self._last_successful_update: datetime | None = None
+
         super().__init__(
             hass,
             _LOGGER,
@@ -131,9 +135,27 @@ class WodifyDataUpdateCoordinator(DataUpdateCoordinator[list[WodifyClass]]):
             update_interval=timedelta(minutes=update_interval),
         )
 
-    async def _enrich_with_coaches(
-        self, classes: list[WodifyClass]
-    ) -> list[WodifyClass]:
+    @property
+    def api_connected(self) -> bool:
+        """Return True if API is connected and responding."""
+        return self._api_connected
+
+    @property
+    def last_error(self) -> str | None:
+        """Return the last error message if API is disconnected."""
+        return self._last_error
+
+    @property
+    def last_successful_update(self) -> datetime | None:
+        """Return when data was last successfully fetched."""
+        return self._last_successful_update
+
+    @property
+    def cached_data(self) -> list[WodifyClass]:
+        """Return cached data (used when API is down)."""
+        return self._cached_data
+
+    async def _enrich_with_coaches(self, classes: list[WodifyClass]) -> list[WodifyClass]:
         """Fetch coach info for upcoming classes.
 
         Only enriches the next MAX_COACH_ENRICHMENT classes to limit API calls.
@@ -179,9 +201,34 @@ class WodifyDataUpdateCoordinator(DataUpdateCoordinator[list[WodifyClass]]):
                 location_names=self.locations if self.locations else None,
                 program_names=self.programs if self.programs else None,
             )
+            # API call succeeded - update status
+            self._api_connected = True
+            self._last_error = None
+            self._last_successful_update = dt_util.now()
         except ApiAuthError as err:
+            self._api_connected = False
+            self._last_error = "Authentication failed"
             raise ConfigEntryAuthFailed("Invalid API key") from err
         except ApiError as err:
+            self._api_connected = False
+            self._last_error = str(err)
+            # Return cached data if available and not too old
+            if self._cached_data and self._last_successful_update:
+                cache_age = dt_util.now() - self._last_successful_update
+                max_age = timedelta(hours=CACHE_MAX_AGE_HOURS)
+                if cache_age < max_age:
+                    _LOGGER.warning(
+                        "API error, using cached data (age: %s): %s",
+                        cache_age,
+                        err,
+                    )
+                    return self._cached_data
+                _LOGGER.warning(
+                    "API error and cached data too old (%s > %s hours): %s",
+                    cache_age,
+                    CACHE_MAX_AGE_HOURS,
+                    err,
+                )
             raise UpdateFailed(f"Error communicating with API: {err}") from err
 
         # Sort classes chronologically for consistent behaviour
@@ -206,19 +253,16 @@ class WodifyDataUpdateCoordinator(DataUpdateCoordinator[list[WodifyClass]]):
 
         if cancellations:
             for cancelled in cancellations:
-                _LOGGER.info(
-                    "Class %s (%s) was cancelled", cancelled.id, cancelled.name
-                )
+                _LOGGER.info("Class %s (%s) was cancelled", cancelled.id, cancelled.name)
                 if self.event_manager is not None:
-                    await self.event_manager.handle_class_cancelled(
-                        cancelled.id, cancelled
-                    )
+                    await self.event_manager.handle_class_cancelled(cancelled.id, cancelled)
+
+        # Cache successful data for use when API is down
+        self._cached_data = active_classes
 
         return active_classes
 
-    async def async_set_filters(
-        self, locations: list[str], programs: list[str]
-    ) -> None:
+    async def async_set_filters(self, locations: list[str], programs: list[str]) -> None:
         """Update location and program filters then refresh."""
 
         self.locations = locations

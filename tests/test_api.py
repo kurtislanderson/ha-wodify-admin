@@ -119,9 +119,7 @@ class TestWodifyAPI:
             assert len(classes) == 1
             assert isinstance(classes[0], WodifyClass)
             assert classes[0].id == "123"
-            assert (
-                classes[0].coach_name == "Not Available"
-            )  # API doesn't provide coach info
+            assert classes[0].coach_name == "Not Available"  # API doesn't provide coach info
 
     @pytest.mark.asyncio
     async def test_search_classes_default_window(self, api_client):

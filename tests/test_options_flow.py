@@ -156,7 +156,10 @@ class TestOptionsFlow:
             )
 
     async def test_options_flow_with_api_update(
-        self, hass, mock_config_entry, mock_api_responses  # noqa: ARG002
+        self,
+        hass,
+        mock_config_entry,
+        mock_api_responses,  # noqa: ARG002
     ):
         """Test options flow updates available locations and programs from API."""
         mock_config_entry.add_to_hass(hass)

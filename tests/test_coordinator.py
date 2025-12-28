@@ -161,9 +161,7 @@ class TestCoordinator:
 
         mock_api.search_classes = AsyncMock(return_value=classes)
 
-        coordinator = WodifyDataUpdateCoordinator(
-            hass, mock_api, ["Downtown"], ["CrossFit"], 5
-        )
+        coordinator = WodifyDataUpdateCoordinator(hass, mock_api, ["Downtown"], ["CrossFit"], 5)
 
         await coordinator.async_refresh()
 
@@ -205,9 +203,7 @@ class TestCoordinator:
 
         mock_api.search_classes = AsyncMock(return_value=initial_classes)
 
-        coordinator = WodifyDataUpdateCoordinator(
-            hass, mock_api, ["Downtown"], ["CrossFit"], 5
-        )
+        coordinator = WodifyDataUpdateCoordinator(hass, mock_api, ["Downtown"], ["CrossFit"], 5)
 
         # Set up mock event manager
         coordinator.event_manager = Mock()
@@ -253,9 +249,7 @@ class TestCoordinator:
         """Test coordinator queries appropriate date window."""
         mock_api.search_classes = AsyncMock(return_value=[])
 
-        coordinator = WodifyDataUpdateCoordinator(
-            hass, mock_api, ["Downtown"], ["CrossFit"], 5
-        )
+        coordinator = WodifyDataUpdateCoordinator(hass, mock_api, ["Downtown"], ["CrossFit"], 5)
 
         with patch("custom_components.wodify.coordinator.dt_util.now") as mock_now:
             mock_now.return_value = datetime(2024, 1, 1, 12, 0, tzinfo=UTC)
@@ -266,14 +260,8 @@ class TestCoordinator:
         call_args = mock_api.search_classes.call_args[1]
 
         # Should query from today to 7 days out
-        assert (
-            call_args["start_date"].date()
-            == datetime(2024, 1, 1, tzinfo=UTC).date()
-        )
-        assert (
-            call_args["end_date"].date()
-            == datetime(2024, 1, 8, tzinfo=UTC).date()
-        )
+        assert call_args["start_date"].date() == datetime(2024, 1, 1, tzinfo=UTC).date()
+        assert call_args["end_date"].date() == datetime(2024, 1, 8, tzinfo=UTC).date()
 
     async def test_coordinator_location_program_filters(self, hass, mock_api):
         """Test coordinator passes location and program filters to API."""
@@ -282,9 +270,7 @@ class TestCoordinator:
         locations = ["Downtown", "Uptown", "Westside"]
         programs = ["CrossFit", "Yoga", "Olympic Lifting"]
 
-        coordinator = WodifyDataUpdateCoordinator(
-            hass, mock_api, locations, programs, 5
-        )
+        coordinator = WodifyDataUpdateCoordinator(hass, mock_api, locations, programs, 5)
 
         await coordinator.async_refresh()
 
@@ -298,9 +284,7 @@ class TestCoordinator:
         """Test coordinator handles empty class list gracefully."""
         mock_api.search_classes = AsyncMock(return_value=[])
 
-        coordinator = WodifyDataUpdateCoordinator(
-            hass, mock_api, ["Downtown"], ["CrossFit"], 5
-        )
+        coordinator = WodifyDataUpdateCoordinator(hass, mock_api, ["Downtown"], ["CrossFit"], 5)
 
         await coordinator.async_refresh()
 
@@ -326,9 +310,7 @@ class TestCoordinator:
 
         mock_api.search_classes = AsyncMock(return_value=classes)
 
-        coordinator = WodifyDataUpdateCoordinator(
-            hass, mock_api, ["Downtown"], ["CrossFit"], 5
-        )
+        coordinator = WodifyDataUpdateCoordinator(hass, mock_api, ["Downtown"], ["CrossFit"], 5)
 
         # First update
         await coordinator.async_refresh()
@@ -373,9 +355,7 @@ class TestCoordinator:
             is_cancelled=True,
         )
 
-        coordinator = WodifyDataUpdateCoordinator(
-            hass, mock_api, ["Downtown"], ["CrossFit"], 5
-        )
+        coordinator = WodifyDataUpdateCoordinator(hass, mock_api, ["Downtown"], ["CrossFit"], 5)
         coordinator.event_manager = Mock()
 
         # First update - active

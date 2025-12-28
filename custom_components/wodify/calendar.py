@@ -35,9 +35,7 @@ class WodifyCalendar(CoordinatorEntity[WodifyDataUpdateCoordinator], CalendarEnt
     _attr_should_poll = False
     _attr_name = "Classes"
 
-    def __init__(
-        self, coordinator: WodifyDataUpdateCoordinator, config_entry: ConfigEntry
-    ) -> None:
+    def __init__(self, coordinator: WodifyDataUpdateCoordinator, config_entry: ConfigEntry) -> None:
         super().__init__(coordinator)
         self._config_entry = config_entry
         unique_source = config_entry.unique_id or config_entry.entry_id
@@ -57,8 +55,7 @@ class WodifyCalendar(CoordinatorEntity[WodifyDataUpdateCoordinator], CalendarEnt
             attendees += " (FULL)"
 
         description = (
-            f"{wodify_class.program_name} at {wodify_class.location_name}\n"
-            f"Attendees: {attendees}"
+            f"{wodify_class.program_name} at {wodify_class.location_name}\nAttendees: {attendees}"
         )
 
         event = CalendarEvent(

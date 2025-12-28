@@ -33,9 +33,7 @@ from .const import (
 
 
 def _extract_program_names(programs: Iterable[dict[str, Any]]) -> list[str]:
-    return sorted(
-        {str(program.get("name")) for program in programs if program.get("name")}
-    )
+    return sorted({str(program.get("name")) for program in programs if program.get("name")})
 
 
 def _extract_locations(classes: Iterable[Any]) -> list[str]:
@@ -65,9 +63,7 @@ class WodifyConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         session = async_get_clientsession(hass)
         return WodifyAPI(api_key, session, hass)
 
-    async def async_step_user(
-        self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    async def async_step_user(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         errors: dict[str, str] = {}
 
         if user_input is not None:
@@ -96,9 +92,7 @@ class WodifyConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
-    async def async_step_locations(
-        self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    async def async_step_locations(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         errors: dict[str, str] = {}
         options = set(self._location_options)
 
@@ -123,9 +117,7 @@ class WodifyConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
-    async def async_step_programs(
-        self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    async def async_step_programs(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         errors: dict[str, str] = {}
         options = set(self._program_options)
 
@@ -139,9 +131,9 @@ class WodifyConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         schema = vol.Schema(
             {
-                vol.Required(
-                    CONF_PROGRAMS, default=list(self._selected_programs)
-                ): cv.multi_select(options if options else set())
+                vol.Required(CONF_PROGRAMS, default=list(self._selected_programs)): cv.multi_select(
+                    options if options else set()
+                )
             }
         )
         return self.async_show_form(
@@ -150,9 +142,7 @@ class WodifyConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
-    async def async_step_options(
-        self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    async def async_step_options(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         errors: dict[str, str] = {}
 
         if user_input is not None:
@@ -185,9 +175,7 @@ class WodifyConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         schema = vol.Schema(
             {
-                vol.Required(
-                    CONF_UPDATE_INTERVAL, default=DEFAULT_UPDATE_INTERVAL
-                ): vol.All(
+                vol.Required(CONF_UPDATE_INTERVAL, default=DEFAULT_UPDATE_INTERVAL): vol.All(
                     vol.Coerce(int),
                     vol.Range(min=MIN_UPDATE_INTERVAL, max=MAX_UPDATE_INTERVAL),
                 ),
@@ -211,9 +199,7 @@ class WodifyConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
-    async def async_step_reauth(
-        self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    async def async_step_reauth(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         errors: dict[str, str] = {}
         entry_id = self.context.get("entry_id")
         entry = self.hass.config_entries.async_get_entry(entry_id) if entry_id else None
@@ -251,14 +237,10 @@ class WodifyOptionsFlow(config_entries.OptionsFlowWithConfigEntry):
     def __init__(self, config_entry: ConfigEntry) -> None:
         super().__init__(config_entry)
         self._locations: list[str] = list(
-            config_entry.options.get(
-                CONF_LOCATIONS, config_entry.data.get(CONF_LOCATIONS, [])
-            )
+            config_entry.options.get(CONF_LOCATIONS, config_entry.data.get(CONF_LOCATIONS, []))
         )
         self._programs: list[str] = list(
-            config_entry.options.get(
-                CONF_PROGRAMS, config_entry.data.get(CONF_PROGRAMS, [])
-            )
+            config_entry.options.get(CONF_PROGRAMS, config_entry.data.get(CONF_PROGRAMS, []))
         )
 
     async def _load_dynamic_options(self, hass: HomeAssistant) -> None:
@@ -285,23 +267,17 @@ class WodifyOptionsFlow(config_entries.OptionsFlowWithConfigEntry):
         if extracted_locations:
             self._locations = extracted_locations
 
-    async def async_step_init(
-        self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    async def async_step_init(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         await self._load_dynamic_options(self.hass)
 
         errors: dict[str, str] = {}
         current_options = self.config_entry.options or {}
 
-        update_interval = current_options.get(
-            CONF_UPDATE_INTERVAL, DEFAULT_UPDATE_INTERVAL
-        )
+        update_interval = current_options.get(CONF_UPDATE_INTERVAL, DEFAULT_UPDATE_INTERVAL)
         before_minutes = current_options.get(
             CONF_BEFORE_CLASS_MINUTES, DEFAULT_BEFORE_CLASS_MINUTES
         )
-        after_minutes = current_options.get(
-            CONF_AFTER_BLOCK_MINUTES, DEFAULT_AFTER_BLOCK_MINUTES
-        )
+        after_minutes = current_options.get(CONF_AFTER_BLOCK_MINUTES, DEFAULT_AFTER_BLOCK_MINUTES)
         selected_locations = current_options.get(
             CONF_LOCATIONS, self.config_entry.data.get(CONF_LOCATIONS, [])
         )
@@ -345,9 +321,7 @@ class WodifyOptionsFlow(config_entries.OptionsFlowWithConfigEntry):
                     vol.Coerce(int),
                     vol.Range(min=MIN_UPDATE_INTERVAL, max=MAX_UPDATE_INTERVAL),
                 ),
-                vol.Required(
-                    CONF_BEFORE_CLASS_MINUTES, default=before_minutes
-                ): vol.All(
+                vol.Required(CONF_BEFORE_CLASS_MINUTES, default=before_minutes): vol.All(
                     vol.Coerce(int),
                     vol.Range(min=MIN_EVENT_MINUTES, max=MAX_EVENT_MINUTES),
                 ),
@@ -355,12 +329,12 @@ class WodifyOptionsFlow(config_entries.OptionsFlowWithConfigEntry):
                     vol.Coerce(int),
                     vol.Range(min=MIN_EVENT_MINUTES, max=MAX_EVENT_MINUTES),
                 ),
-                vol.Required(
-                    CONF_LOCATIONS, default=list(selected_locations)
-                ): cv.multi_select(set(self._locations)),
-                vol.Required(
-                    CONF_PROGRAMS, default=list(selected_programs)
-                ): cv.multi_select(set(self._programs)),
+                vol.Required(CONF_LOCATIONS, default=list(selected_locations)): cv.multi_select(
+                    set(self._locations)
+                ),
+                vol.Required(CONF_PROGRAMS, default=list(selected_programs)): cv.multi_select(
+                    set(self._programs)
+                ),
             }
         )
 

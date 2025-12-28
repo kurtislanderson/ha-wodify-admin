@@ -155,9 +155,7 @@ class TestServices:
         # Verify timing was updated
         event_manager.update_timing.assert_called_once_with(30, 20)
 
-    async def test_set_event_timing_service_validation(
-        self, hass, mock_integration_setup
-    ):
+    async def test_set_event_timing_service_validation(self, hass, mock_integration_setup):
         """Test set event timing service validation."""
         config_entry, _, _ = mock_integration_setup
 
@@ -166,9 +164,7 @@ class TestServices:
         await async_setup_services(hass)
 
         # Test invalid before_class_minutes (too low)
-        with pytest.raises(
-            ServiceValidationError, match="before_class_minutes must be between"
-        ):
+        with pytest.raises(ServiceValidationError, match="before_class_minutes must be between"):
             await hass.services.async_call(
                 DOMAIN,
                 "set_event_timing",
@@ -181,9 +177,7 @@ class TestServices:
             )
 
         # Test invalid after_block_minutes (too high)
-        with pytest.raises(
-            ServiceValidationError, match="after_block_minutes must be between"
-        ):
+        with pytest.raises(ServiceValidationError, match="after_block_minutes must be between"):
             await hass.services.async_call(
                 DOMAIN,
                 "set_event_timing",

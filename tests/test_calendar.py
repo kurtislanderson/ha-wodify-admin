@@ -74,7 +74,11 @@ class TestCalendar:
         assert calendar.available is True
 
     async def test_calendar_event_during_class(
-        self, hass, mock_coordinator, mock_config_entry, calendar_test_data  # noqa: ARG002
+        self,
+        hass,  # noqa: ARG002
+        mock_coordinator,
+        mock_config_entry,
+        calendar_test_data,  # noqa: ARG002
     ):
         """Test calendar event property during a class."""
         mock_coordinator.data = calendar_test_data
@@ -93,7 +97,11 @@ class TestCalendar:
             assert event.end == datetime(2024, 1, 1, 13, 0, tzinfo=UTC)
 
     async def test_calendar_event_no_current_class(
-        self, hass, mock_coordinator, mock_config_entry, calendar_test_data  # noqa: ARG002
+        self,
+        hass,  # noqa: ARG002
+        mock_coordinator,
+        mock_config_entry,
+        calendar_test_data,  # noqa: ARG002
     ):
         """Test calendar event property when no class is ongoing."""
         mock_coordinator.data = calendar_test_data
@@ -147,8 +155,7 @@ class TestCalendar:
 
         assert len(events) == 3  # Only Jan 1 events
         assert all(
-            event.start.date() == datetime(2024, 1, 1, tzinfo=UTC).date()
-            for event in events
+            event.start.date() == datetime(2024, 1, 1, tzinfo=UTC).date() for event in events
         )
 
     async def test_calendar_returns_empty_task_list(
@@ -203,7 +210,10 @@ class TestCalendar:
         assert events == []
 
     async def test_calendar_unavailable_on_coordinator_error(
-        self, hass, mock_coordinator, mock_config_entry  # noqa: ARG002
+        self,
+        hass,  # noqa: ARG002
+        mock_coordinator,
+        mock_config_entry,  # noqa: ARG002
     ):
         """Test calendar is unavailable when coordinator has no data."""
         mock_coordinator.data = None
@@ -215,7 +225,10 @@ class TestCalendar:
         assert calendar.event is None
 
     async def test_calendar_device_info(
-        self, hass, mock_coordinator, mock_config_entry  # noqa: ARG002
+        self,
+        hass,  # noqa: ARG002
+        mock_coordinator,
+        mock_config_entry,  # noqa: ARG002
     ):
         """Test calendar device info."""
         calendar = WodifyCalendar(mock_coordinator, mock_config_entry)

@@ -71,19 +71,13 @@ async def _async_handle_set_filter(hass: HomeAssistant, call: ServiceCall) -> No
     )
 
 
-async def _async_handle_set_event_timing(
-    hass: HomeAssistant, call: ServiceCall
-) -> None:
+async def _async_handle_set_event_timing(hass: HomeAssistant, call: ServiceCall) -> None:
     entry_id = call.data.get("entry_id")
     if not entry_id:
         raise ServiceValidationError("entry_id is required")
 
-    before_minutes = int(
-        call.data.get(CONF_BEFORE_CLASS_MINUTES, DEFAULT_BEFORE_CLASS_MINUTES)
-    )
-    after_minutes = int(
-        call.data.get(CONF_AFTER_BLOCK_MINUTES, DEFAULT_AFTER_BLOCK_MINUTES)
-    )
+    before_minutes = int(call.data.get(CONF_BEFORE_CLASS_MINUTES, DEFAULT_BEFORE_CLASS_MINUTES))
+    after_minutes = int(call.data.get(CONF_AFTER_BLOCK_MINUTES, DEFAULT_AFTER_BLOCK_MINUTES))
 
     if not (MIN_EVENT_MINUTES <= before_minutes <= MAX_EVENT_MINUTES):
         raise ServiceValidationError(

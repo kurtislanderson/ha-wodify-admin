@@ -95,9 +95,7 @@ class TestWodifyClass:
         assert class_data.id == "123"
         assert class_data.name == "CrossFit"
         assert class_data.is_cancelled is False
-        assert (
-            class_data.coach_name == "Not Available"
-        )  # API doesn't provide coach info
+        assert class_data.coach_name == "Not Available"  # API doesn't provide coach info
         assert class_data.max_attendees == 20
 
     def test_wodify_class_cancelled_detection(self):

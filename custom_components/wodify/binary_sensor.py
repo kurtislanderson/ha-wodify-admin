@@ -40,9 +40,7 @@ class WodifyClassOngoingBinarySensor(
     _attr_device_class = BinarySensorDeviceClass.RUNNING
     _attr_name = "Class Ongoing"
 
-    def __init__(
-        self, coordinator: WodifyDataUpdateCoordinator, config_entry: ConfigEntry
-    ) -> None:
+    def __init__(self, coordinator: WodifyDataUpdateCoordinator, config_entry: ConfigEntry) -> None:
         super().__init__(coordinator)
         self._config_entry = config_entry
         unique_source = config_entry.unique_id or config_entry.entry_id
