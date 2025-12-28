@@ -14,7 +14,7 @@ A Home Assistant integration for Wodify class schedules. Use your Wodify schedul
 ### Core Functionality
 - **Real-time class tracking** - Monitor upcoming classes with automatic updates every 5 minutes (configurable 1-60 min)
 - **Smart class blocks** - Automatically detects back-to-back classes (within 30 minutes)
-- **Configurable notifications** - Set custom timing for before-class and after-block alerts
+- **Pre-Class & Post-Block Triggers** - Binary sensors for automating TVs, lights, etc.
 - **Private training filter** - Optionally exclude private training sessions from class lists
 - **Next Class sensor** - Always see what's coming up next with full details
 - **Current Class sensor** - Shows the active class or "No active class"
@@ -75,8 +75,8 @@ A Home Assistant integration for Wodify class schedules. Use your Wodify schedul
 5. Select the programs to include
 6. Configure timing options:
    - **Update interval**: How often to refresh data (1-60 min, default: 5)
-   - **Before class minutes**: How early to notify before classes (5-60 min, default: 15)
-   - **After block minutes**: How long after blocks to notify (5-60 min, default: 15)
+   - **Pre-class trigger**: Minutes before class to turn on the Pre-Class Trigger sensor (5-60, default: 15)
+   - **Post-block trigger**: Minutes after block ends to turn on the Post-Block Trigger sensor (5-60, default: 15)
 
 ### Options
 
@@ -163,8 +163,8 @@ You can adjust settings at any time through the integration options:
 - **State**: Current update interval (e.g., "Updates every 5 min")
 - **Attributes**:
   - `update_interval_minutes`: Refresh frequency
-  - `before_class_minutes`: Pre-class notification timing
-  - `after_block_minutes`: Post-block notification timing
+  - `before_class_minutes`: Pre-class trigger timing (minutes)
+  - `after_block_minutes`: Post-block trigger timing (minutes)
   - `locations`: List of tracked locations
   - `programs`: List of tracked programs
 
@@ -182,33 +182,36 @@ You can adjust settings at any time through the integration options:
   - `start_time`: When the class started
   - `end_time`: When the class ends
 
-#### Class Starting Soon Binary Sensor
+#### Pre-Class Trigger
 - **Entity ID**: `binary_sensor.wodify_class_starting_soon`
-- **State**: ON when a class starts within the configured "before class minutes", OFF otherwise
+- **State**: ON when a class starts within the configured trigger window, OFF otherwise
 - **Device Class**: `occupancy`
-- **Use Case**: Trigger automations to prepare for class (lights, music, HVAC, etc.)
+- **Icon**: `mdi:television` (on) / `mdi:television-off` (off)
+- **Use Case**: Trigger automations to prepare for class (turn on TVs, lights, HVAC, etc.)
 - **Attributes**:
-  - `before_class_minutes`: Configured trigger window
+  - `trigger_window_minutes`: Configured minutes before class to trigger (5-60)
   - `next_class`: Name of upcoming class
   - `coach`: Instructor name
   - `location`: Gym location
-  - `minutes_until_start`: Minutes until class starts
-  - `start_time`: When the class starts
+  - `minutes_until_class`: Minutes until class starts
+  - `class_start_time`: ISO formatted start time
 
-#### Block Just Ended Binary Sensor
+#### Post-Block Trigger
 - **Entity ID**: `binary_sensor.wodify_block_just_ended`
-- **State**: ON for the configured "after block minutes" after a class block ends, OFF otherwise
+- **State**: ON for the configured trigger window after a class block ends, OFF otherwise
 - **Device Class**: `occupancy`
-- **Use Case**: Trigger post-workout automations (cool down, turn off equipment, etc.)
+- **Icon**: `mdi:television-off` (on) / `mdi:television` (off)
+- **Use Case**: Trigger automations after classes end (turn off TVs, lights, equipment, etc.)
+- **Note**: A "block" is a group of back-to-back classes with gaps less than 30 minutes between them
 - **Attributes**:
-  - `after_block_minutes`: Configured trigger window
+  - `trigger_window_minutes`: Configured minutes after block to trigger (5-60)
   - `last_class`: Name of last class in block
   - `coach`: Instructor name
   - `location`: Gym location
   - `block_class_count`: Number of classes in the block
   - `block_duration_minutes`: Total duration of the block
-  - `minutes_since_end`: Minutes since block ended
-  - `block_end_time`: When the block ended
+  - `minutes_since_block_end`: Minutes since block ended
+  - `block_end_time`: ISO formatted end time
 
 ### Buttons
 
@@ -245,123 +248,70 @@ Update location and program filters.
 | `programs` | Yes | List of programs to include |
 
 ### wodify.set_event_timing
-Update event notification timing.
+Update pre-class and post-block trigger timing.
 
 | Field | Required | Description |
 |-------|----------|-------------|
 | `entry_id` | Yes | The config entry ID |
-| `before_class_minutes` | No | Minutes before class (5-60, default: 15) |
-| `after_block_minutes` | No | Minutes after block ends (5-60, default: 15) |
+| `before_class_minutes` | No | Pre-class trigger window in minutes (5-60, default: 15) |
+| `after_block_minutes` | No | Post-block trigger window in minutes (5-60, default: 15) |
 
 ## Automations
 
-### Example: Class Starting Soon
-```yaml
-automation:
-  - alias: "Wodify Class Reminder"
-    trigger:
-      - platform: event
-        event_type: wodify_class_starts_soon
-    action:
-      - service: notify.mobile_app
-        data:
-          title: "Class Starting Soon"
-          message: >
-            {{ trigger.event.data.class_name }} starts in
-            {{ trigger.event.data.minutes_until_start }} minutes
-            at {{ trigger.event.data.location }}
-```
+The integration provides two binary sensors specifically designed for triggering automations:
+- **Pre-Class Trigger**: Turns ON within X minutes before a class starts
+- **Post-Block Trigger**: Turns ON within X minutes after a class block ends
 
-### Example: Post-Workout Recovery
+### Example: Turn On TVs & Lights Before Class
 ```yaml
 automation:
-  - alias: "Post Workout Recovery"
-    trigger:
-      - platform: event
-        event_type: wodify_class_block_done
-    action:
-      - service: climate.set_temperature
-        target:
-          entity_id: climate.home
-        data:
-          temperature: 68
-      - service: notify.mobile_app
-        data:
-          message: >
-            Great job! {{ trigger.event.data.block_class_count }} class(es) complete.
-            Total workout time: {{ trigger.event.data.block_duration_minutes }} minutes
-```
-
-### Example: Class Cancelled Alert
-```yaml
-automation:
-  - alias: "Class Cancelled Alert"
-    trigger:
-      - platform: event
-        event_type: wodify_class_cancelled
-    action:
-      - service: notify.mobile_app
-        data:
-          title: "Class Cancelled"
-          message: >
-            {{ trigger.event.data.class_name }} with {{ trigger.event.data.coach }}
-            has been cancelled.
-```
-
-### Example: Workout Mode
-```yaml
-automation:
-  - alias: "Enable Workout Mode"
+  - alias: "Gym Pre-Class Setup"
     trigger:
       - platform: state
-        entity_id: binary_sensor.wodify_class_ongoing
+        entity_id: binary_sensor.wodify_class_starting_soon
         to: "on"
     action:
-      - service: scene.turn_on
+      - service: media_player.turn_on
         target:
-          entity_id: scene.workout_mode
-      - service: switch.turn_on
+          entity_id: media_player.gym_tv
+      - service: light.turn_on
         target:
-          entity_id: switch.do_not_disturb
+          entity_id: light.gym_lights
 ```
 
-## Event Data
-
-### wodify_class_starts_soon
-```json
-{
-  "class_id": "167917250",
-  "class_name": "6:00 AM WOD",
-  "coach": "Coach Name",
-  "location": "CrossFit Inner Loop",
-  "program": "DAILY WOD",
-  "start_time": "2024-01-15T06:00:00+00:00",
-  "minutes_until_start": 15
-}
+### Example: Turn Off TVs & Lights After Class Block
+```yaml
+automation:
+  - alias: "Gym Post-Block Shutdown"
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.wodify_block_just_ended
+        to: "on"
+    action:
+      - service: media_player.turn_off
+        target:
+          entity_id: media_player.gym_tv
+      - service: light.turn_off
+        target:
+          entity_id: light.gym_lights
 ```
 
-### wodify_class_block_done
-```json
-{
-  "block_class_count": 2,
-  "block_duration_minutes": 120,
-  "last_class_id": "167917251",
-  "last_class_name": "7:00 AM WOD",
-  "location": "CrossFit Inner Loop",
-  "minutes_after_end": 15
-}
-```
-
-### wodify_class_cancelled
-```json
-{
-  "class_id": "167917250",
-  "class_name": "6:00 AM WOD",
-  "coach": "Coach Name",
-  "location": "CrossFit Inner Loop",
-  "original_start_time": "2024-01-15T06:00:00+00:00",
-  "cancellation_time": "2024-01-14T18:30:00+00:00"
-}
+### Using Trigger Window Attributes
+Both sensors expose a `trigger_window_minutes` attribute showing the configured timing:
+```yaml
+automation:
+  - alias: "Log Trigger Info"
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.wodify_class_starting_soon
+        to: "on"
+    action:
+      - service: logbook.log
+        data:
+          name: "Wodify"
+          message: >
+            Pre-class trigger activated {{ state_attr('binary_sensor.wodify_class_starting_soon', 'trigger_window_minutes') }}
+            minutes before {{ state_attr('binary_sensor.wodify_class_starting_soon', 'next_class') }}
 ```
 
 ## API Information

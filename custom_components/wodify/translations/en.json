@@ -24,11 +24,11 @@
       },
       "options": {
         "title": "Additional Options",
-        "description": "Configure update frequency and event notification timing.",
+        "description": "Configure update frequency and automation trigger timing.",
         "data": {
           "update_interval": "Update interval (minutes)",
-          "before_class_minutes": "Minutes before class to notify",
-          "after_block_minutes": "Minutes after class block ends to notify"
+          "before_class_minutes": "Pre-class trigger (minutes before class)",
+          "after_block_minutes": "Post-block trigger (minutes after block ends)"
         }
       },
       "reauth": {
@@ -61,8 +61,9 @@
         "description": "Adjust your Wodify integration settings.",
         "data": {
           "update_interval": "Update interval (minutes)",
-          "before_class_minutes": "Minutes before class to notify",
-          "after_block_minutes": "Minutes after class block ends to notify",
+          "before_class_minutes": "Pre-class trigger (minutes before class)",
+          "after_block_minutes": "Post-block trigger (minutes after block ends)",
+          "exclude_private_training": "Exclude Private Training",
           "locations": "Locations",
           "programs": "Programs"
         }
@@ -85,6 +86,12 @@
     "binary_sensor": {
       "class_ongoing": {
         "name": "Class Ongoing"
+      },
+      "class_starting_soon": {
+        "name": "Pre-Class Trigger"
+      },
+      "block_just_ended": {
+        "name": "Post-Block Trigger"
       }
     },
     "calendar": {
@@ -123,20 +130,20 @@
       }
     },
     "set_event_timing": {
-      "name": "Set Event Timing",
-      "description": "Update event notification timing.",
+      "name": "Set Trigger Timing",
+      "description": "Update pre-class and post-block automation trigger timing.",
       "fields": {
         "entry_id": {
           "name": "Config Entry ID",
           "description": "The ID of the Wodify config entry to update."
         },
         "before_class_minutes": {
-          "name": "Before Class Minutes",
-          "description": "Minutes before class to send notification (5-60)."
+          "name": "Pre-Class Trigger Minutes",
+          "description": "Minutes before class to trigger automation (5-60)."
         },
         "after_block_minutes": {
-          "name": "After Block Minutes",
-          "description": "Minutes after class block to send notification (5-60)."
+          "name": "Post-Block Trigger Minutes",
+          "description": "Minutes after class block ends to trigger automation (5-60)."
         }
       }
     }

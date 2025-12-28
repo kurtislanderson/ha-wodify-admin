@@ -13,6 +13,11 @@ from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.selector import (
+    NumberSelector,
+    NumberSelectorConfig,
+    NumberSelectorMode,
+)
 
 from .api import ApiAuthError, ApiError, WodifyAPI
 from .const import (
@@ -155,9 +160,9 @@ class WodifyConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         errors: dict[str, str] = {}
 
         if user_input is not None:
-            update_interval = user_input[CONF_UPDATE_INTERVAL]
-            before_minutes = user_input[CONF_BEFORE_CLASS_MINUTES]
-            after_minutes = user_input[CONF_AFTER_BLOCK_MINUTES]
+            update_interval = int(user_input[CONF_UPDATE_INTERVAL])
+            before_minutes = int(user_input[CONF_BEFORE_CLASS_MINUTES])
+            after_minutes = int(user_input[CONF_AFTER_BLOCK_MINUTES])
 
             if not (MIN_UPDATE_INTERVAL <= update_interval <= MAX_UPDATE_INTERVAL):
                 errors[CONF_UPDATE_INTERVAL] = "invalid_update_interval"
@@ -184,21 +189,36 @@ class WodifyConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         schema = vol.Schema(
             {
-                vol.Required(CONF_UPDATE_INTERVAL, default=DEFAULT_UPDATE_INTERVAL): vol.All(
-                    vol.Coerce(int),
-                    vol.Range(min=MIN_UPDATE_INTERVAL, max=MAX_UPDATE_INTERVAL),
+                vol.Required(CONF_UPDATE_INTERVAL, default=DEFAULT_UPDATE_INTERVAL): NumberSelector(
+                    NumberSelectorConfig(
+                        min=MIN_UPDATE_INTERVAL,
+                        max=MAX_UPDATE_INTERVAL,
+                        step=1,
+                        unit_of_measurement="min",
+                        mode=NumberSelectorMode.SLIDER,
+                    )
                 ),
                 vol.Required(
                     CONF_BEFORE_CLASS_MINUTES, default=DEFAULT_BEFORE_CLASS_MINUTES
-                ): vol.All(
-                    vol.Coerce(int),
-                    vol.Range(min=MIN_EVENT_MINUTES, max=MAX_EVENT_MINUTES),
+                ): NumberSelector(
+                    NumberSelectorConfig(
+                        min=MIN_EVENT_MINUTES,
+                        max=MAX_EVENT_MINUTES,
+                        step=5,
+                        unit_of_measurement="min",
+                        mode=NumberSelectorMode.SLIDER,
+                    )
                 ),
                 vol.Required(
                     CONF_AFTER_BLOCK_MINUTES, default=DEFAULT_AFTER_BLOCK_MINUTES
-                ): vol.All(
-                    vol.Coerce(int),
-                    vol.Range(min=MIN_EVENT_MINUTES, max=MAX_EVENT_MINUTES),
+                ): NumberSelector(
+                    NumberSelectorConfig(
+                        min=MIN_EVENT_MINUTES,
+                        max=MAX_EVENT_MINUTES,
+                        step=5,
+                        unit_of_measurement="min",
+                        mode=NumberSelectorMode.SLIDER,
+                    )
                 ),
             }
         )
@@ -298,9 +318,9 @@ class WodifyOptionsFlow(config_entries.OptionsFlowWithConfigEntry):
         )
 
         if user_input is not None:
-            update_interval = user_input[CONF_UPDATE_INTERVAL]
-            before_minutes = user_input[CONF_BEFORE_CLASS_MINUTES]
-            after_minutes = user_input[CONF_AFTER_BLOCK_MINUTES]
+            update_interval = int(user_input[CONF_UPDATE_INTERVAL])
+            before_minutes = int(user_input[CONF_BEFORE_CLASS_MINUTES])
+            after_minutes = int(user_input[CONF_AFTER_BLOCK_MINUTES])
             exclude_private = user_input[CONF_EXCLUDE_PRIVATE_TRAINING]
             selected_locations = user_input[CONF_LOCATIONS]
             selected_programs = user_input[CONF_PROGRAMS]
@@ -331,17 +351,32 @@ class WodifyOptionsFlow(config_entries.OptionsFlowWithConfigEntry):
 
         schema = vol.Schema(
             {
-                vol.Required(CONF_UPDATE_INTERVAL, default=update_interval): vol.All(
-                    vol.Coerce(int),
-                    vol.Range(min=MIN_UPDATE_INTERVAL, max=MAX_UPDATE_INTERVAL),
+                vol.Required(CONF_UPDATE_INTERVAL, default=update_interval): NumberSelector(
+                    NumberSelectorConfig(
+                        min=MIN_UPDATE_INTERVAL,
+                        max=MAX_UPDATE_INTERVAL,
+                        step=1,
+                        unit_of_measurement="min",
+                        mode=NumberSelectorMode.SLIDER,
+                    )
                 ),
-                vol.Required(CONF_BEFORE_CLASS_MINUTES, default=before_minutes): vol.All(
-                    vol.Coerce(int),
-                    vol.Range(min=MIN_EVENT_MINUTES, max=MAX_EVENT_MINUTES),
+                vol.Required(CONF_BEFORE_CLASS_MINUTES, default=before_minutes): NumberSelector(
+                    NumberSelectorConfig(
+                        min=MIN_EVENT_MINUTES,
+                        max=MAX_EVENT_MINUTES,
+                        step=5,
+                        unit_of_measurement="min",
+                        mode=NumberSelectorMode.SLIDER,
+                    )
                 ),
-                vol.Required(CONF_AFTER_BLOCK_MINUTES, default=after_minutes): vol.All(
-                    vol.Coerce(int),
-                    vol.Range(min=MIN_EVENT_MINUTES, max=MAX_EVENT_MINUTES),
+                vol.Required(CONF_AFTER_BLOCK_MINUTES, default=after_minutes): NumberSelector(
+                    NumberSelectorConfig(
+                        min=MIN_EVENT_MINUTES,
+                        max=MAX_EVENT_MINUTES,
+                        step=5,
+                        unit_of_measurement="min",
+                        mode=NumberSelectorMode.SLIDER,
+                    )
                 ),
                 vol.Required(CONF_EXCLUDE_PRIVATE_TRAINING, default=exclude_private): bool,
                 vol.Required(CONF_LOCATIONS, default=list(selected_locations)): cv.multi_select(

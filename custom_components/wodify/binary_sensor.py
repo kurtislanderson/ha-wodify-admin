@@ -123,11 +123,15 @@ class WodifyClassOngoingBinarySensor(
 class WodifyClassStartingSoonBinarySensor(
     CoordinatorEntity[WodifyDataUpdateCoordinator], BinarySensorEntity
 ):
-    """Binary sensor indicating a class is starting soon (within configured minutes)."""
+    """Binary sensor that turns ON when a class starts within the configured minutes.
+
+    Use this sensor to trigger pre-class automations (e.g., turn on TVs, lights).
+    Turns ON when: now is within `before_class_minutes` of the next class start time.
+    """
 
     _attr_should_poll = False
     _attr_device_class = BinarySensorDeviceClass.OCCUPANCY
-    _attr_name = "Class Starting Soon"
+    _attr_name = "Pre-Class Trigger"
 
     def __init__(self, coordinator: WodifyDataUpdateCoordinator, config_entry: ConfigEntry) -> None:
         super().__init__(coordinator)
@@ -172,8 +176,18 @@ class WodifyClassStartingSoonBinarySensor(
 
     @property
     def extra_state_attributes(self) -> dict[str, object]:
+        """Return attributes for the pre-class trigger sensor.
+
+        Attributes:
+            trigger_window_minutes: Configured minutes before class to trigger (5-60)
+            next_class: Name of the upcoming class
+            coach: Coach name for the upcoming class
+            location: Location of the upcoming class
+            minutes_until_class: Minutes until the class starts
+            class_start_time: ISO formatted start time of the upcoming class
+        """
         attributes: dict[str, object] = {
-            "before_class_minutes": self._before_minutes,
+            "trigger_window_minutes": self._before_minutes,
         }
         next_class = self._next_class()
         if next_class is None:
@@ -187,15 +201,15 @@ class WodifyClassStartingSoonBinarySensor(
                 "next_class": next_class.name,
                 "coach": next_class.coach_name,
                 "location": next_class.location_name,
-                "minutes_until_start": max(0, minutes_until),
-                "start_time": self._format_time(next_class.start_time),
+                "minutes_until_class": max(0, minutes_until),
+                "class_start_time": self._format_time(next_class.start_time),
             }
         )
         return attributes
 
     @property
     def icon(self) -> str:
-        return "mdi:bell-ring" if self.is_on else "mdi:bell-outline"
+        return "mdi:television" if self.is_on else "mdi:television-off"
 
     @property
     def device_info(self) -> dict[str, object]:
@@ -210,11 +224,16 @@ class WodifyClassStartingSoonBinarySensor(
 class WodifyBlockJustEndedBinarySensor(
     CoordinatorEntity[WodifyDataUpdateCoordinator], BinarySensorEntity
 ):
-    """Binary sensor indicating a class block just ended (within configured minutes)."""
+    """Binary sensor that turns ON after a class block ends within the configured minutes.
+
+    Use this sensor to trigger post-block automations (e.g., turn off TVs, lights).
+    Turns ON when: now is within `after_block_minutes` of the last class block end time.
+    A "block" is a group of back-to-back classes with gaps < 30 minutes between them.
+    """
 
     _attr_should_poll = False
     _attr_device_class = BinarySensorDeviceClass.OCCUPANCY
-    _attr_name = "Block Just Ended"
+    _attr_name = "Post-Block Trigger"
 
     def __init__(self, coordinator: WodifyDataUpdateCoordinator, config_entry: ConfigEntry) -> None:
         super().__init__(coordinator)
@@ -261,8 +280,20 @@ class WodifyBlockJustEndedBinarySensor(
 
     @property
     def extra_state_attributes(self) -> dict[str, object]:
+        """Return attributes for the post-block trigger sensor.
+
+        Attributes:
+            trigger_window_minutes: Configured minutes after block to trigger (5-60)
+            last_class: Name of the last class in the block
+            coach: Coach name for the last class
+            location: Location of the block
+            block_class_count: Number of classes in the block
+            block_duration_minutes: Total duration of the block in minutes
+            minutes_since_block_end: Minutes since the block ended
+            block_end_time: ISO formatted end time of the block
+        """
         attributes: dict[str, object] = {
-            "after_block_minutes": self._after_minutes,
+            "trigger_window_minutes": self._after_minutes,
         }
         block = self._last_ended_block()
         if block is None:
@@ -281,7 +312,7 @@ class WodifyBlockJustEndedBinarySensor(
                 "location": last_class.location_name,
                 "block_class_count": len(block),
                 "block_duration_minutes": block_duration,
-                "minutes_since_end": max(0, minutes_since_end),
+                "minutes_since_block_end": max(0, minutes_since_end),
                 "block_end_time": self._format_time(last_class.end_time),
             }
         )
@@ -289,7 +320,7 @@ class WodifyBlockJustEndedBinarySensor(
 
     @property
     def icon(self) -> str:
-        return "mdi:flag-checkered" if self.is_on else "mdi:flag-outline"
+        return "mdi:television-off" if self.is_on else "mdi:television"
 
     @property
     def device_info(self) -> dict[str, object]:

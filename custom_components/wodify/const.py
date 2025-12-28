@@ -11,16 +11,10 @@ CONF_BEFORE_CLASS_MINUTES = "before_class_minutes"
 CONF_AFTER_BLOCK_MINUTES = "after_block_minutes"
 CONF_EXCLUDE_PRIVATE_TRAINING = "exclude_private_training"
 
-# Backwards compatibility with earlier constant names
-CONF_BEFORE_MINUTES = CONF_BEFORE_CLASS_MINUTES
-CONF_AFTER_MINUTES = CONF_AFTER_BLOCK_MINUTES
-
 # Default values
 DEFAULT_UPDATE_INTERVAL = 5  # minutes
-DEFAULT_BEFORE_CLASS_MINUTES = 15
-DEFAULT_AFTER_BLOCK_MINUTES = 15
-DEFAULT_BEFORE_MINUTES = DEFAULT_BEFORE_CLASS_MINUTES
-DEFAULT_AFTER_MINUTES = DEFAULT_AFTER_BLOCK_MINUTES
+DEFAULT_BEFORE_CLASS_MINUTES = 15  # minutes before class to trigger pre-class automation
+DEFAULT_AFTER_BLOCK_MINUTES = 15  # minutes after block ends to trigger post-block automation
 DEFAULT_EXCLUDE_PRIVATE_TRAINING = True  # Exclude by default
 
 # Valid ranges
