@@ -84,21 +84,6 @@ class WodifyClassOngoingBinarySensor(
     def _format_time(value: datetime) -> str:
         return value.strftime("%Y-%m-%dT%H:%M:%S")
 
-    @staticmethod
-    def _clean_class_name(name: str) -> str:
-        """Remove redundant time from class name.
-
-        Handles: "YOGA: 8:00 AM" -> "YOGA", "6:15 AM WOD" -> "WOD"
-        """
-        import re
-        # Time at end (e.g., "YOGA: 8:00 AM")
-        suffix_pattern = re.compile(r"[:\s]+\d{1,2}:\d{2}\s*(?:AM|PM|am|pm)?\s*$")
-        # Time at beginning (e.g., "6:15 AM WOD")
-        prefix_pattern = re.compile(r"^\d{1,2}:\d{2}\s*(?:AM|PM|am|pm)?\s+")
-        cleaned = suffix_pattern.sub("", name).strip()
-        cleaned = prefix_pattern.sub("", cleaned).strip()
-        return cleaned
-
     @property
     def extra_state_attributes(self) -> dict[str, object]:
         attributes: dict[str, object] = {}
@@ -118,7 +103,7 @@ class WodifyClassOngoingBinarySensor(
 
         attributes.update(
             {
-                "current_class": self._clean_class_name(current.name),
+                "current_class": current.name,
                 "coach": current.coach_name,
                 "location": current.location_name,
                 "program": current.program_name,
