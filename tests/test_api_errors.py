@@ -1,6 +1,5 @@
 """Test API error scenarios."""
 
-import asyncio
 import re
 
 import aiohttp
@@ -31,7 +30,7 @@ class TestAPIErrorHandling:
         with aioresponses() as mock:
             mock.get(
                 re.compile(r"https://api\.wodify\.com/v1/programs\?.*"),
-                exception=asyncio.TimeoutError(),
+                exception=TimeoutError(),
             )
 
             with pytest.raises(ApiError, match="timeout"):

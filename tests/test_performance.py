@@ -2,7 +2,7 @@
 
 import asyncio
 import time
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock, Mock
 
 import pytest
@@ -14,7 +14,7 @@ from custom_components.wodify.models import WodifyClass
 def large_dataset():
     """Create a large dataset for performance testing."""
     classes = []
-    base_time = datetime.now(tz=timezone.utc)
+    base_time = datetime.now(tz=UTC)
 
     # Generate 500 classes over 7 days (typical weekly schedule)
     for day in range(7):
@@ -42,7 +42,7 @@ def large_dataset():
 class TestPerformance:
     """Test performance requirements."""
 
-    async def test_update_performance(self, hass, mock_config_entry, large_dataset):
+    async def test_update_performance(self, hass, mock_config_entry, large_dataset):  # noqa: ARG002
         """Test coordinator update performance with large dataset."""
         from custom_components.wodify.api import WodifyAPI
         from custom_components.wodify.coordinator import WodifyDataUpdateCoordinator
@@ -75,7 +75,7 @@ class TestPerformance:
         assert len(result) > 0
         assert all(not cls.is_cancelled for cls in result)
 
-    async def test_memory_usage(self, hass, mock_config_entry, large_dataset):
+    async def test_memory_usage(self, hass, mock_config_entry, large_dataset):  # noqa: ARG002
         """Test memory usage stays reasonable with large dataset."""
         import sys
 
@@ -144,7 +144,7 @@ class TestPerformance:
         assert len(event_manager._block_end_events) > 0
 
     async def test_entity_update_performance(
-        self, hass, mock_coordinator, large_dataset
+        self, hass, mock_coordinator, large_dataset  # noqa: ARG002
     ):
         """Test entity state update performance."""
         from custom_components.wodify.sensor import WodifyNextClassSensor
@@ -167,7 +167,7 @@ class TestPerformance:
         # State updates should be fast
         assert avg_time < 0.01, f"Average state update took {avg_time * 1000:.2f}ms"
 
-    async def test_concurrent_update_performance(self, hass, mock_config_entry):
+    async def test_concurrent_update_performance(self, hass, mock_config_entry):  # noqa: ARG002
         """Test performance with concurrent operations."""
         from custom_components.wodify.api import WodifyAPI
         from custom_components.wodify.coordinator import WodifyDataUpdateCoordinator
@@ -181,8 +181,8 @@ class TestPerformance:
                     WodifyClass(
                         id=f"class_{i}_{j}",
                         name=f"Class {i}-{j}",
-                        start_time=datetime.now(tz=timezone.utc) + timedelta(hours=j),
-                        end_time=datetime.now(tz=timezone.utc) + timedelta(hours=j + 1),
+                        start_time=datetime.now(tz=UTC) + timedelta(hours=j),
+                        end_time=datetime.now(tz=UTC) + timedelta(hours=j + 1),
                         coach_name=f"Coach {i}",
                         location_name=f"Location {i}",
                         program_name="CrossFit",
@@ -229,7 +229,7 @@ class TestPerformance:
         start_time = time.time()
 
         for _ in range(call_count):
-            try:
+            try:  # noqa: SIM105
                 await api._apply_rate_limit()
             except Exception:
                 pass  # We just want to test the rate limiter timing
@@ -245,7 +245,7 @@ class TestPerformance:
             f"Expected at least {min_expected_delay}s delay, got {duration}s"
         )
 
-    async def test_state_history_performance(self, hass, mock_coordinator):
+    async def test_state_history_performance(self, hass, mock_coordinator):  # noqa: ARG002
         """Test performance with state calculation across many data changes."""
         from custom_components.wodify.sensor import WodifyNextClassSensor
 
@@ -265,8 +265,8 @@ class TestPerformance:
                 WodifyClass(
                     id=f"class_{i}",
                     name=f"Class {i}",
-                    start_time=datetime.now(tz=timezone.utc) + timedelta(hours=i),
-                    end_time=datetime.now(tz=timezone.utc) + timedelta(hours=i + 1),
+                    start_time=datetime.now(tz=UTC) + timedelta(hours=i),
+                    end_time=datetime.now(tz=UTC) + timedelta(hours=i + 1),
                     coach_name="Coach",
                     location_name="Gym",
                     program_name="CrossFit",
@@ -299,16 +299,16 @@ class TestPerformance:
         # Query different date ranges
         queries = [
             (
-                datetime.now(tz=timezone.utc),
-                datetime.now(tz=timezone.utc) + timedelta(days=1),
+                datetime.now(tz=UTC),
+                datetime.now(tz=UTC) + timedelta(days=1),
             ),  # 1 day
             (
-                datetime.now(tz=timezone.utc),
-                datetime.now(tz=timezone.utc) + timedelta(days=3),
+                datetime.now(tz=UTC),
+                datetime.now(tz=UTC) + timedelta(days=3),
             ),  # 3 days
             (
-                datetime.now(tz=timezone.utc),
-                datetime.now(tz=timezone.utc) + timedelta(days=7),
+                datetime.now(tz=UTC),
+                datetime.now(tz=UTC) + timedelta(days=7),
             ),  # 7 days
         ]
 

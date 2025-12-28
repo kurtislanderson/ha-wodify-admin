@@ -1,6 +1,6 @@
 """Test sensor entities."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import Mock, patch
 
 import pytest
@@ -12,14 +12,14 @@ from custom_components.wodify.sensor import WodifyNextClassSensor, async_setup_e
 
 
 @pytest.fixture
-def coordinator_with_data(hass, mock_coordinator):
+def coordinator_with_data(hass, mock_coordinator):  # noqa: ARG001
     """Coordinator with test data."""
     mock_coordinator.data = [
         WodifyClass(
             id="123",
             name="CrossFit",
-            start_time=datetime(2024, 1, 1, 17, 30, tzinfo=timezone.utc),
-            end_time=datetime(2024, 1, 1, 18, 30, tzinfo=timezone.utc),
+            start_time=datetime(2024, 1, 1, 17, 30, tzinfo=UTC),
+            end_time=datetime(2024, 1, 1, 18, 30, tzinfo=UTC),
             coach_name="Coach Mike",
             location_name="Downtown",
             program_name="CrossFit",
@@ -29,8 +29,8 @@ def coordinator_with_data(hass, mock_coordinator):
         WodifyClass(
             id="456",
             name="Olympic Lifting",
-            start_time=datetime(2024, 1, 2, 9, 0, tzinfo=timezone.utc),
-            end_time=datetime(2024, 1, 2, 10, 0, tzinfo=timezone.utc),
+            start_time=datetime(2024, 1, 2, 9, 0, tzinfo=UTC),
+            end_time=datetime(2024, 1, 2, 10, 0, tzinfo=UTC),
             coach_name="Coach Sarah",
             location_name="Downtown",
             program_name="Olympic Lifting",
@@ -45,7 +45,7 @@ class TestNextClassSensor:
     """Test next class sensor."""
 
     async def test_sensor_properties(
-        self, hass, coordinator_with_data, mock_config_entry
+        self, hass, coordinator_with_data, mock_config_entry  # noqa: ARG002
     ):
         """Test sensor properties."""
         sensor = WodifyNextClassSensor(coordinator_with_data, mock_config_entry)
@@ -56,22 +56,22 @@ class TestNextClassSensor:
         assert sensor.should_poll is False
         assert sensor.available is True
 
-    async def test_sensor_state(self, hass, coordinator_with_data, mock_config_entry):
+    async def test_sensor_state(self, hass, coordinator_with_data, mock_config_entry):  # noqa: ARG002
         """Test sensor state."""
         sensor = WodifyNextClassSensor(coordinator_with_data, mock_config_entry)
 
         # Mock current time before class
         with patch("homeassistant.util.dt.now") as mock_now:
-            mock_now.return_value = datetime(2024, 1, 1, 12, 0, tzinfo=timezone.utc)
+            mock_now.return_value = datetime(2024, 1, 1, 12, 0, tzinfo=UTC)
             # Get expected time string using the same timezone conversion as the sensor
             start_local = dt_util.as_local(
-                datetime(2024, 1, 1, 17, 30, tzinfo=timezone.utc)
+                datetime(2024, 1, 1, 17, 30, tzinfo=UTC)
             )
             expected_time = start_local.strftime("%I:%M %p").lstrip("0")
             assert sensor.native_value == f"CrossFit at {expected_time} with Coach Mike"
 
     async def test_sensor_state_different_formats(
-        self, hass, coordinator_with_data, mock_config_entry
+        self, hass, coordinator_with_data, mock_config_entry  # noqa: ARG002
     ):
         """Test sensor state with different time formats."""
         sensor = WodifyNextClassSensor(coordinator_with_data, mock_config_entry)
@@ -80,8 +80,8 @@ class TestNextClassSensor:
         coordinator_with_data.data[0] = WodifyClass(
             id="789",
             name="Morning CrossFit",
-            start_time=datetime(2024, 1, 1, 6, 0, tzinfo=timezone.utc),
-            end_time=datetime(2024, 1, 1, 7, 0, tzinfo=timezone.utc),
+            start_time=datetime(2024, 1, 1, 6, 0, tzinfo=UTC),
+            end_time=datetime(2024, 1, 1, 7, 0, tzinfo=UTC),
             coach_name="Coach Tim",
             location_name="Downtown",
             program_name="CrossFit",
@@ -90,10 +90,10 @@ class TestNextClassSensor:
         )
 
         with patch("homeassistant.util.dt.now") as mock_now:
-            mock_now.return_value = datetime(2024, 1, 1, 5, 0, tzinfo=timezone.utc)
+            mock_now.return_value = datetime(2024, 1, 1, 5, 0, tzinfo=UTC)
             # Get expected time string using the same timezone conversion as the sensor
             start_local = dt_util.as_local(
-                datetime(2024, 1, 1, 6, 0, tzinfo=timezone.utc)
+                datetime(2024, 1, 1, 6, 0, tzinfo=UTC)
             )
             expected_time = start_local.strftime("%I:%M %p").lstrip("0")
             assert (
@@ -102,14 +102,14 @@ class TestNextClassSensor:
             )
 
     async def test_sensor_attributes(
-        self, hass, coordinator_with_data, mock_config_entry
+        self, hass, coordinator_with_data, mock_config_entry  # noqa: ARG002
     ):
         """Test sensor attributes."""
         sensor = WodifyNextClassSensor(coordinator_with_data, mock_config_entry)
 
         # Mock current time to be before the test classes
         with patch("custom_components.wodify.sensor.dt_util.now") as mock_now:
-            mock_now.return_value = datetime(2024, 1, 1, 12, 0, tzinfo=timezone.utc)
+            mock_now.return_value = datetime(2024, 1, 1, 12, 0, tzinfo=UTC)
             attrs = sensor.extra_state_attributes
 
         assert attrs["class_id"] == "123"
@@ -124,7 +124,7 @@ class TestNextClassSensor:
         assert attrs["is_full"] is False
 
     async def test_sensor_attributes_full_class(
-        self, hass, coordinator_with_data, mock_config_entry
+        self, hass, coordinator_with_data, mock_config_entry  # noqa: ARG002
     ):
         """Test sensor attributes when class is full."""
         sensor = WodifyNextClassSensor(coordinator_with_data, mock_config_entry)
@@ -134,13 +134,13 @@ class TestNextClassSensor:
 
         # Mock current time to be before the test class (Jan 2 class)
         with patch("custom_components.wodify.sensor.dt_util.now") as mock_now:
-            mock_now.return_value = datetime(2024, 1, 2, 6, 0, tzinfo=timezone.utc)
+            mock_now.return_value = datetime(2024, 1, 2, 6, 0, tzinfo=UTC)
             attrs = sensor.extra_state_attributes
 
         assert attrs["capacity"] == "12/12"
         assert attrs["is_full"] is True
 
-    async def test_sensor_no_classes(self, hass, mock_coordinator, mock_config_entry):
+    async def test_sensor_no_classes(self, hass, mock_coordinator, mock_config_entry):  # noqa: ARG002
         """Test sensor with no upcoming classes."""
         mock_coordinator.data = []
         sensor = WodifyNextClassSensor(mock_coordinator, mock_config_entry)
@@ -149,15 +149,15 @@ class TestNextClassSensor:
         assert sensor.extra_state_attributes == {}
 
     async def test_sensor_skips_past_classes(
-        self, hass, mock_coordinator, mock_config_entry
+        self, hass, mock_coordinator, mock_config_entry  # noqa: ARG002
     ):
         """Test sensor skips classes that have already started."""
         mock_coordinator.data = [
             WodifyClass(
                 id="1",
                 name="Past Class",
-                start_time=datetime(2024, 1, 1, 10, 0, tzinfo=timezone.utc),
-                end_time=datetime(2024, 1, 1, 11, 0, tzinfo=timezone.utc),
+                start_time=datetime(2024, 1, 1, 10, 0, tzinfo=UTC),
+                end_time=datetime(2024, 1, 1, 11, 0, tzinfo=UTC),
                 coach_name="Coach A",
                 location_name="Gym",
                 program_name="CrossFit",
@@ -167,8 +167,8 @@ class TestNextClassSensor:
             WodifyClass(
                 id="2",
                 name="Future Class",
-                start_time=datetime(2024, 1, 1, 18, 0, tzinfo=timezone.utc),
-                end_time=datetime(2024, 1, 1, 19, 0, tzinfo=timezone.utc),
+                start_time=datetime(2024, 1, 1, 18, 0, tzinfo=UTC),
+                end_time=datetime(2024, 1, 1, 19, 0, tzinfo=UTC),
                 coach_name="Coach B",
                 location_name="Gym",
                 program_name="CrossFit",
@@ -181,12 +181,12 @@ class TestNextClassSensor:
 
         # Mock current time between classes
         with patch("homeassistant.util.dt.now") as mock_now:
-            mock_now.return_value = datetime(2024, 1, 1, 12, 0, tzinfo=timezone.utc)
+            mock_now.return_value = datetime(2024, 1, 1, 12, 0, tzinfo=UTC)
             assert "Future Class" in sensor.native_value
             assert sensor.extra_state_attributes["class_id"] == "2"
 
     async def test_sensor_unavailable_on_coordinator_error(
-        self, hass, mock_coordinator, mock_config_entry
+        self, hass, mock_coordinator, mock_config_entry  # noqa: ARG002
     ):
         """Test sensor is unavailable when coordinator has no data."""
         mock_coordinator.data = None
@@ -197,7 +197,7 @@ class TestNextClassSensor:
         assert sensor.available is False
         assert sensor.native_value is None
 
-    async def test_sensor_device_info(self, hass, mock_coordinator, mock_config_entry):
+    async def test_sensor_device_info(self, hass, mock_coordinator, mock_config_entry):  # noqa: ARG002
         """Test sensor device info."""
         sensor = WodifyNextClassSensor(mock_coordinator, mock_config_entry)
 
@@ -208,7 +208,7 @@ class TestNextClassSensor:
         assert device_info["model"] == "Gym Schedule"
 
     async def test_sensor_entity_registry_settings(
-        self, hass, mock_coordinator, mock_config_entry
+        self, hass, mock_coordinator, mock_config_entry  # noqa: ARG002
     ):
         """Test sensor entity registry settings."""
         sensor = WodifyNextClassSensor(mock_coordinator, mock_config_entry)
@@ -246,7 +246,7 @@ class TestNextClassSensor:
         assert isinstance(entities[0], WodifyNextClassSensor)
 
     async def test_sensor_state_updates_on_coordinator_update(
-        self, hass, coordinator_with_data, mock_config_entry
+        self, hass, coordinator_with_data, mock_config_entry  # noqa: ARG002
     ):
         """Test sensor updates when coordinator data changes."""
         sensor = WodifyNextClassSensor(coordinator_with_data, mock_config_entry)
@@ -256,8 +256,8 @@ class TestNextClassSensor:
             WodifyClass(
                 id="999",
                 name="New Class",
-                start_time=datetime(2024, 1, 1, 20, 0, tzinfo=timezone.utc),
-                end_time=datetime(2024, 1, 1, 21, 0, tzinfo=timezone.utc),
+                start_time=datetime(2024, 1, 1, 20, 0, tzinfo=UTC),
+                end_time=datetime(2024, 1, 1, 21, 0, tzinfo=UTC),
                 coach_name="Coach New",
                 location_name="Downtown",
                 program_name="CrossFit",
@@ -268,7 +268,7 @@ class TestNextClassSensor:
 
         # Mock current time to be before the test class
         with patch("custom_components.wodify.sensor.dt_util.now") as mock_now:
-            mock_now.return_value = datetime(2024, 1, 1, 12, 0, tzinfo=timezone.utc)
+            mock_now.return_value = datetime(2024, 1, 1, 12, 0, tzinfo=UTC)
             # State should reflect new data (sensor reads from coordinator.data directly)
             assert "New Class" in sensor.native_value
             assert sensor.extra_state_attributes["coach"] == "Coach New"

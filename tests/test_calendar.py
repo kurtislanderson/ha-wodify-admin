@@ -1,6 +1,6 @@
 """Test calendar entity."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import Mock, patch
 
 import pytest
@@ -17,8 +17,8 @@ def calendar_test_data():
         WodifyClass(
             id="1",
             name="Morning CrossFit",
-            start_time=datetime(2024, 1, 1, 6, 0, tzinfo=timezone.utc),
-            end_time=datetime(2024, 1, 1, 7, 0, tzinfo=timezone.utc),
+            start_time=datetime(2024, 1, 1, 6, 0, tzinfo=UTC),
+            end_time=datetime(2024, 1, 1, 7, 0, tzinfo=UTC),
             coach_name="Coach Mike",
             location_name="Downtown",
             program_name="CrossFit",
@@ -28,8 +28,8 @@ def calendar_test_data():
         WodifyClass(
             id="2",
             name="Noon Yoga",
-            start_time=datetime(2024, 1, 1, 12, 0, tzinfo=timezone.utc),
-            end_time=datetime(2024, 1, 1, 13, 0, tzinfo=timezone.utc),
+            start_time=datetime(2024, 1, 1, 12, 0, tzinfo=UTC),
+            end_time=datetime(2024, 1, 1, 13, 0, tzinfo=UTC),
             coach_name="Coach Sarah",
             location_name="Uptown",
             program_name="Yoga",
@@ -39,8 +39,8 @@ def calendar_test_data():
         WodifyClass(
             id="3",
             name="Evening CrossFit",
-            start_time=datetime(2024, 1, 1, 18, 0, tzinfo=timezone.utc),
-            end_time=datetime(2024, 1, 1, 19, 0, tzinfo=timezone.utc),
+            start_time=datetime(2024, 1, 1, 18, 0, tzinfo=UTC),
+            end_time=datetime(2024, 1, 1, 19, 0, tzinfo=UTC),
             coach_name="Coach John",
             location_name="Downtown",
             program_name="CrossFit",
@@ -50,8 +50,8 @@ def calendar_test_data():
         WodifyClass(
             id="4",
             name="Next Week Class",
-            start_time=datetime(2024, 1, 8, 10, 0, tzinfo=timezone.utc),
-            end_time=datetime(2024, 1, 8, 11, 0, tzinfo=timezone.utc),
+            start_time=datetime(2024, 1, 8, 10, 0, tzinfo=UTC),
+            end_time=datetime(2024, 1, 8, 11, 0, tzinfo=UTC),
             coach_name="Coach Amy",
             location_name="Downtown",
             program_name="Olympic Lifting",
@@ -64,7 +64,7 @@ def calendar_test_data():
 class TestCalendar:
     """Test Wodify calendar."""
 
-    async def test_calendar_properties(self, hass, mock_coordinator, mock_config_entry):
+    async def test_calendar_properties(self, hass, mock_coordinator, mock_config_entry):  # noqa: ARG002
         """Test calendar properties."""
         calendar = WodifyCalendar(mock_coordinator, mock_config_entry)
 
@@ -74,7 +74,7 @@ class TestCalendar:
         assert calendar.available is True
 
     async def test_calendar_event_during_class(
-        self, hass, mock_coordinator, mock_config_entry, calendar_test_data
+        self, hass, mock_coordinator, mock_config_entry, calendar_test_data  # noqa: ARG002
     ):
         """Test calendar event property during a class."""
         mock_coordinator.data = calendar_test_data
@@ -82,18 +82,18 @@ class TestCalendar:
 
         # Mock current time during noon yoga
         with patch("homeassistant.util.dt.now") as mock_now:
-            mock_now.return_value = datetime(2024, 1, 1, 12, 30, tzinfo=timezone.utc)
+            mock_now.return_value = datetime(2024, 1, 1, 12, 30, tzinfo=UTC)
             event = calendar.event
 
             assert event is not None
             assert event.summary == "Noon Yoga - Coach Sarah"
             assert event.description == "Yoga at Uptown\nAttendees: 10/15"
             assert event.location == "Uptown"
-            assert event.start == datetime(2024, 1, 1, 12, 0, tzinfo=timezone.utc)
-            assert event.end == datetime(2024, 1, 1, 13, 0, tzinfo=timezone.utc)
+            assert event.start == datetime(2024, 1, 1, 12, 0, tzinfo=UTC)
+            assert event.end == datetime(2024, 1, 1, 13, 0, tzinfo=UTC)
 
     async def test_calendar_event_no_current_class(
-        self, hass, mock_coordinator, mock_config_entry, calendar_test_data
+        self, hass, mock_coordinator, mock_config_entry, calendar_test_data  # noqa: ARG002
     ):
         """Test calendar event property when no class is ongoing."""
         mock_coordinator.data = calendar_test_data
@@ -101,7 +101,7 @@ class TestCalendar:
 
         # Mock current time between classes
         with patch("homeassistant.util.dt.now") as mock_now:
-            mock_now.return_value = datetime(2024, 1, 1, 8, 0, tzinfo=timezone.utc)
+            mock_now.return_value = datetime(2024, 1, 1, 8, 0, tzinfo=UTC)
             event = calendar.event
             assert event is None
 
@@ -114,8 +114,8 @@ class TestCalendar:
 
         events = await calendar.async_get_events(
             hass,
-            datetime(2024, 1, 1, 0, 0, tzinfo=timezone.utc),
-            datetime(2024, 1, 7, 23, 59, tzinfo=timezone.utc),
+            datetime(2024, 1, 1, 0, 0, tzinfo=UTC),
+            datetime(2024, 1, 7, 23, 59, tzinfo=UTC),
         )
 
         # Should only include events within the week (not next week)
@@ -123,7 +123,7 @@ class TestCalendar:
 
         # Verify first event
         assert events[0].summary == "Morning CrossFit - Coach Mike"
-        assert events[0].start == datetime(2024, 1, 1, 6, 0, tzinfo=timezone.utc)
+        assert events[0].start == datetime(2024, 1, 1, 6, 0, tzinfo=UTC)
         assert events[0].location == "Downtown"
 
         # Verify event descriptions include capacity
@@ -141,13 +141,13 @@ class TestCalendar:
         # Request only January 1st events
         events = await calendar.async_get_events(
             hass,
-            datetime(2024, 1, 1, 0, 0, tzinfo=timezone.utc),
-            datetime(2024, 1, 1, 23, 59, tzinfo=timezone.utc),
+            datetime(2024, 1, 1, 0, 0, tzinfo=UTC),
+            datetime(2024, 1, 1, 23, 59, tzinfo=UTC),
         )
 
         assert len(events) == 3  # Only Jan 1 events
         assert all(
-            event.start.date() == datetime(2024, 1, 1, tzinfo=timezone.utc).date()
+            event.start.date() == datetime(2024, 1, 1, tzinfo=UTC).date()
             for event in events
         )
 
@@ -168,8 +168,8 @@ class TestCalendar:
         full_class = WodifyClass(
             id="1",
             name="Popular Class",
-            start_time=datetime(2024, 1, 1, 17, 0, tzinfo=timezone.utc),
-            end_time=datetime(2024, 1, 1, 18, 0, tzinfo=timezone.utc),
+            start_time=datetime(2024, 1, 1, 17, 0, tzinfo=UTC),
+            end_time=datetime(2024, 1, 1, 18, 0, tzinfo=UTC),
             coach_name="Coach Mike",
             location_name="Downtown",
             program_name="CrossFit",
@@ -182,8 +182,8 @@ class TestCalendar:
 
         events = await calendar.async_get_events(
             hass,
-            datetime(2024, 1, 1, 0, 0, tzinfo=timezone.utc),
-            datetime(2024, 1, 2, 0, 0, tzinfo=timezone.utc),
+            datetime(2024, 1, 1, 0, 0, tzinfo=UTC),
+            datetime(2024, 1, 2, 0, 0, tzinfo=UTC),
         )
 
         assert len(events) == 1
@@ -196,14 +196,14 @@ class TestCalendar:
 
         events = await calendar.async_get_events(
             hass,
-            datetime(2024, 1, 1, 0, 0, tzinfo=timezone.utc),
-            datetime(2024, 1, 7, 23, 59, tzinfo=timezone.utc),
+            datetime(2024, 1, 1, 0, 0, tzinfo=UTC),
+            datetime(2024, 1, 7, 23, 59, tzinfo=UTC),
         )
 
         assert events == []
 
     async def test_calendar_unavailable_on_coordinator_error(
-        self, hass, mock_coordinator, mock_config_entry
+        self, hass, mock_coordinator, mock_config_entry  # noqa: ARG002
     ):
         """Test calendar is unavailable when coordinator has no data."""
         mock_coordinator.data = None
@@ -215,7 +215,7 @@ class TestCalendar:
         assert calendar.event is None
 
     async def test_calendar_device_info(
-        self, hass, mock_coordinator, mock_config_entry
+        self, hass, mock_coordinator, mock_config_entry  # noqa: ARG002
     ):
         """Test calendar device info."""
         calendar = WodifyCalendar(mock_coordinator, mock_config_entry)
@@ -270,8 +270,8 @@ class TestCalendar:
         # Request with naive datetimes
         events = await calendar.async_get_events(
             hass,
-            datetime(2024, 1, 1, 0, 0, tzinfo=timezone.utc),
-            datetime(2024, 1, 2, 0, 0, tzinfo=timezone.utc),
+            datetime(2024, 1, 1, 0, 0, tzinfo=UTC),
+            datetime(2024, 1, 2, 0, 0, tzinfo=UTC),
         )
 
         assert len(events) == 1
@@ -287,14 +287,14 @@ class TestCalendar:
 
         events1 = await calendar.async_get_events(
             hass,
-            datetime(2024, 1, 1, 0, 0, tzinfo=timezone.utc),
-            datetime(2024, 1, 7, 23, 59, tzinfo=timezone.utc),
+            datetime(2024, 1, 1, 0, 0, tzinfo=UTC),
+            datetime(2024, 1, 7, 23, 59, tzinfo=UTC),
         )
 
         events2 = await calendar.async_get_events(
             hass,
-            datetime(2024, 1, 1, 0, 0, tzinfo=timezone.utc),
-            datetime(2024, 1, 7, 23, 59, tzinfo=timezone.utc),
+            datetime(2024, 1, 1, 0, 0, tzinfo=UTC),
+            datetime(2024, 1, 7, 23, 59, tzinfo=UTC),
         )
 
         # UIDs should be consistent between calls

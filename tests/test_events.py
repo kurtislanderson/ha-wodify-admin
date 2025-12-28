@@ -1,6 +1,6 @@
 """Test event system."""
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from unittest.mock import Mock, patch
 
 import pytest
@@ -18,7 +18,7 @@ from custom_components.wodify.models import WodifyClass
 @pytest.fixture
 def sample_classes_for_events():
     """Create sample classes for event testing."""
-    base_time = datetime.now(tz=timezone.utc).replace(microsecond=0)
+    base_time = datetime.now(tz=UTC).replace(microsecond=0)
     return [
         WodifyClass(
             id="1",
@@ -88,7 +88,7 @@ class TestEventManager:
 
         # Mock current time
         with patch("homeassistant.util.dt.now") as mock_now:
-            mock_now.return_value = datetime.now(tz=timezone.utc).replace(microsecond=0)
+            mock_now.return_value = datetime.now(tz=UTC).replace(microsecond=0)
             event_manager.schedule_events()
 
             # Verify events are scheduled
@@ -152,7 +152,7 @@ class TestEventManager:
 
         # Initial scheduling
         with patch("homeassistant.util.dt.now") as mock_now:
-            mock_now.return_value = datetime.now(tz=timezone.utc).replace(microsecond=0)
+            mock_now.return_value = datetime.now(tz=UTC).replace(microsecond=0)
             event_manager.schedule_events()
 
         initial_upcoming = list(event_manager._upcoming_events.values())
@@ -197,8 +197,8 @@ class TestEventManager:
         cancelled_class = WodifyClass(
             id="123",
             name="Cancelled CrossFit",
-            start_time=datetime.now(tz=timezone.utc) + timedelta(hours=1),
-            end_time=datetime.now(tz=timezone.utc) + timedelta(hours=2),
+            start_time=datetime.now(tz=UTC) + timedelta(hours=1),
+            end_time=datetime.now(tz=UTC) + timedelta(hours=2),
             coach_name="Coach Mike",
             location_name="Downtown",
             program_name="CrossFit",
@@ -228,7 +228,7 @@ class TestEventManager:
 
         # Schedule events
         with patch("homeassistant.util.dt.now") as mock_now:
-            mock_now.return_value = datetime.now(tz=timezone.utc).replace(microsecond=0)
+            mock_now.return_value = datetime.now(tz=UTC).replace(microsecond=0)
             event_manager.schedule_events()
 
         # Verify event is scheduled
@@ -252,7 +252,7 @@ class TestEventManager:
 
         # Mock current time
         with patch("homeassistant.util.dt.now") as mock_now:
-            mock_now.return_value = datetime.now(tz=timezone.utc).replace(microsecond=0)
+            mock_now.return_value = datetime.now(tz=UTC).replace(microsecond=0)
             event_manager.schedule_events()
 
         # Should detect 2 blocks: classes 1&2 (5 min gap), class 3 alone
@@ -263,8 +263,8 @@ class TestEventManager:
         past_class = WodifyClass(
             id="past",
             name="Past Class",
-            start_time=datetime.now(tz=timezone.utc) - timedelta(hours=2),
-            end_time=datetime.now(tz=timezone.utc) - timedelta(hours=1),
+            start_time=datetime.now(tz=UTC) - timedelta(hours=2),
+            end_time=datetime.now(tz=UTC) - timedelta(hours=1),
             coach_name="Coach",
             location_name="Gym",
             program_name="CrossFit",
@@ -312,8 +312,8 @@ class TestEventManager:
         edge_class = WodifyClass(
             id="edge",
             name="Edge Class",
-            start_time=datetime.now(tz=timezone.utc) + timedelta(minutes=15),
-            end_time=datetime.now(tz=timezone.utc) + timedelta(minutes=75),
+            start_time=datetime.now(tz=UTC) + timedelta(minutes=15),
+            end_time=datetime.now(tz=UTC) + timedelta(minutes=75),
             coach_name="Coach",
             location_name="Gym",
             program_name="CrossFit",
@@ -340,7 +340,7 @@ class TestEventManager:
         event_manager = WodifyEventManager(hass, mock_coordinator_with_events, 15, 15)
 
         with patch("homeassistant.util.dt.now") as mock_now:
-            mock_now.return_value = datetime.now(tz=timezone.utc).replace(microsecond=0)
+            mock_now.return_value = datetime.now(tz=UTC).replace(microsecond=0)
             event_manager.schedule_events()
 
         # Should log scheduled events

@@ -2,7 +2,7 @@
 
 import asyncio
 import re
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import Mock, patch
 
 import aiohttp
@@ -110,8 +110,8 @@ class TestWodifyAPI:
             )
 
             classes = await api_client.search_classes(
-                start_date=datetime(2024, 1, 1, tzinfo=timezone.utc),
-                end_date=datetime(2024, 1, 7, tzinfo=timezone.utc),
+                start_date=datetime(2024, 1, 1, tzinfo=UTC),
+                end_date=datetime(2024, 1, 7, tzinfo=UTC),
                 location_names=["Downtown"],
                 program_names=["CrossFit"],
             )
@@ -220,7 +220,7 @@ class TestWodifyAPI:
         """Test exponential backoff with jitter on errors."""
         call_count = 0
 
-        async def mock_execute(*args, **kwargs):
+        async def mock_execute(*args, **kwargs):  # noqa: ARG001
             nonlocal call_count
             call_count += 1
             if call_count < 3:
@@ -242,7 +242,7 @@ class TestWodifyAPI:
             # This will cause a timeout - use regex to match pagination params
             mock.get(
                 re.compile(r"https://api\.wodify\.com/v1/programs\?.*"),
-                exception=asyncio.TimeoutError(),
+                exception=TimeoutError(),
             )
 
             with pytest.raises(ApiError, match="timeout"):

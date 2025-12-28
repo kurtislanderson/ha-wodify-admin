@@ -87,7 +87,7 @@ class TestConfigFlow:
         assert result["type"] == FlowResultType.FORM
         assert result["errors"] == {"base": "cannot_connect"}
 
-    async def test_full_flow_success(self, hass, mock_wodify_api):
+    async def test_full_flow_success(self, hass, mock_wodify_api):  # noqa: ARG002
         """Test successful full configuration flow."""
         # Step 1: API Key
         result = await hass.config_entries.flow.async_init(
@@ -161,7 +161,7 @@ class TestConfigFlow:
         assert result["type"] == FlowResultType.ABORT
         assert result["reason"] == "already_configured"
 
-    async def test_reauth_flow(self, hass, mock_config_entry, mock_wodify_api):
+    async def test_reauth_flow(self, hass, mock_config_entry, mock_wodify_api):  # noqa: ARG002
         """Test reauth flow."""
         mock_config_entry.add_to_hass(hass)
 
@@ -213,7 +213,7 @@ class TestConfigFlow:
         assert result["type"] == FlowResultType.FORM
         assert result["errors"] == {"base": "invalid_auth"}
 
-    async def test_options_validation(self, hass, mock_wodify_api):
+    async def test_options_validation(self, hass, mock_wodify_api):  # noqa: ARG002
         """Test options validation in config flow - schema validates ranges."""
         from homeassistant.data_entry_flow import InvalidData
 
@@ -246,7 +246,7 @@ class TestConfigFlow:
                 },
             )
 
-    async def test_empty_locations_or_programs(self, hass, mock_wodify_api):
+    async def test_empty_locations_or_programs(self, hass, mock_wodify_api):  # noqa: ARG002
         """Test handling when no locations or programs selected."""
         result = await hass.config_entries.flow.async_init(
             DOMAIN, context={"source": config_entries.SOURCE_USER}

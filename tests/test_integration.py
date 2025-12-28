@@ -1,8 +1,7 @@
 """Integration tests."""
 
-import asyncio
-from datetime import datetime, timedelta, timezone
-from unittest.mock import AsyncMock, Mock, patch
+from datetime import UTC, datetime, timedelta
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from homeassistant.config_entries import ConfigEntryState
@@ -10,7 +9,6 @@ from homeassistant.const import STATE_UNAVAILABLE
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 
-from custom_components.wodify import async_setup_entry, async_unload_entry
 from custom_components.wodify.const import DOMAIN
 from custom_components.wodify.models import WodifyClass
 
@@ -66,7 +64,7 @@ async def setup_integration(
 @pytest.fixture
 def mock_api_responses():
     """Create mock API responses."""
-    now = datetime.now(tz=timezone.utc)
+    now = datetime.now(tz=UTC)
     return {
         "programs": [
             {"id": "1", "name": "CrossFit"},
@@ -124,7 +122,7 @@ class TestIntegration:
         assert state is not None
 
     async def test_reload_entry(
-        self, hass, mock_config_entry, mock_api_responses, persistent_api_mock
+        self, hass, mock_config_entry, mock_api_responses, persistent_api_mock  # noqa: ARG002
     ):
         """Test reloading config entry."""
         # Using persistent_api_mock fixture to ensure mocks survive reload
@@ -146,7 +144,7 @@ class TestIntegration:
         assert new_state.state != STATE_UNAVAILABLE
 
     async def test_unload_entry(
-        self, hass, mock_config_entry, mock_api_responses, persistent_api_mock
+        self, hass, mock_config_entry, mock_api_responses, persistent_api_mock  # noqa: ARG002
     ):
         """Test unloading config entry."""
         mock_config_entry.add_to_hass(hass)
@@ -203,8 +201,8 @@ class TestIntegration:
         new_class = WodifyClass(
             id="3",
             name="New Class",
-            start_time=datetime.now(tz=timezone.utc) + timedelta(hours=1),
-            end_time=datetime.now(tz=timezone.utc) + timedelta(hours=2),
+            start_time=datetime.now(tz=UTC) + timedelta(hours=1),
+            end_time=datetime.now(tz=UTC) + timedelta(hours=2),
             coach_name="Coach New",
             location_name="Downtown",
             program_name="CrossFit",
@@ -255,12 +253,12 @@ class TestIntegration:
             assert len(coordinator._listeners) >= 1
 
             # Test that updating coordinator data triggers the event manager
-            initial_event_count = len(event_manager._upcoming_events)
+            initial_event_count = len(event_manager._upcoming_events)  # noqa: F841
             new_class = WodifyClass(
                 id="new",
                 name="New Class",
-                start_time=datetime.now(tz=timezone.utc) + timedelta(hours=1),
-                end_time=datetime.now(tz=timezone.utc) + timedelta(hours=2),
+                start_time=datetime.now(tz=UTC) + timedelta(hours=1),
+                end_time=datetime.now(tz=UTC) + timedelta(hours=2),
                 coach_name="Coach",
                 location_name="Downtown",
                 program_name="CrossFit",
@@ -289,8 +287,8 @@ class TestIntegration:
         upcoming_class = WodifyClass(
             id="1",
             name="Starting Soon",
-            start_time=datetime.now(tz=timezone.utc) + timedelta(minutes=20),
-            end_time=datetime.now(tz=timezone.utc) + timedelta(hours=1),
+            start_time=datetime.now(tz=UTC) + timedelta(minutes=20),
+            end_time=datetime.now(tz=UTC) + timedelta(hours=1),
             coach_name="Coach Mike",
             location_name="Downtown",
             program_name="CrossFit",
@@ -382,7 +380,7 @@ class TestIntegration:
             await hass.config_entries.async_setup(mock_config_entry.entry_id)
             await hass.async_block_till_done()
 
-            event_manager = hass.data[DOMAIN][mock_config_entry.entry_id][
+            event_manager = hass.data[DOMAIN][mock_config_entry.entry_id][  # noqa: F841
                 "event_manager"
             ]
 

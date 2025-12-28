@@ -1,5 +1,6 @@
 """Test options flow."""
 
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
@@ -11,10 +12,8 @@ from custom_components.wodify.const import (
     CONF_LOCATIONS,
     CONF_PROGRAMS,
     CONF_UPDATE_INTERVAL,
-    DOMAIN,
 )
 from custom_components.wodify.models import WodifyClass
-from datetime import datetime, timezone
 
 
 @pytest.fixture
@@ -39,8 +38,8 @@ def mock_api_responses():
                 WodifyClass(
                     id="101",
                     name="8:00 AM WOD",
-                    start_time=datetime(2025, 1, 1, 8, 0, tzinfo=timezone.utc),
-                    end_time=datetime(2025, 1, 1, 9, 0, tzinfo=timezone.utc),
+                    start_time=datetime(2025, 1, 1, 8, 0, tzinfo=UTC),
+                    end_time=datetime(2025, 1, 1, 9, 0, tzinfo=UTC),
                     coach_name="Coach Mike",
                     location_name="CrossFit inner loop",
                     program_name="DAILY WOD",
@@ -50,8 +49,8 @@ def mock_api_responses():
                 WodifyClass(
                     id="102",
                     name="9:00 AM WOD",
-                    start_time=datetime(2025, 1, 1, 9, 0, tzinfo=timezone.utc),
-                    end_time=datetime(2025, 1, 1, 10, 0, tzinfo=timezone.utc),
+                    start_time=datetime(2025, 1, 1, 9, 0, tzinfo=UTC),
+                    end_time=datetime(2025, 1, 1, 10, 0, tzinfo=UTC),
                     coach_name="Coach Sarah",
                     location_name="CrossFit inner loop",
                     program_name="DAILY WOD",
@@ -67,7 +66,7 @@ def mock_api_responses():
 class TestOptionsFlow:
     """Test options flow."""
 
-    async def test_options_flow(self, hass, mock_config_entry, mock_api_responses):
+    async def test_options_flow(self, hass, mock_config_entry, mock_api_responses):  # noqa: ARG002
         """Test options flow."""
         mock_config_entry.add_to_hass(hass)
 
@@ -103,7 +102,7 @@ class TestOptionsFlow:
         assert result["data"][CONF_LOCATIONS] == ["CrossFit inner loop"]
         assert result["data"][CONF_PROGRAMS] == ["DAILY WOD"]
 
-    async def test_options_flow_validation(self, hass, mock_config_entry, mock_api_responses):
+    async def test_options_flow_validation(self, hass, mock_config_entry, mock_api_responses):  # noqa: ARG002
         """Test options flow validation - schema validates ranges."""
         from homeassistant.data_entry_flow import InvalidData
 
@@ -157,7 +156,7 @@ class TestOptionsFlow:
             )
 
     async def test_options_flow_with_api_update(
-        self, hass, mock_config_entry, mock_api_responses
+        self, hass, mock_config_entry, mock_api_responses  # noqa: ARG002
     ):
         """Test options flow updates available locations and programs from API."""
         mock_config_entry.add_to_hass(hass)
@@ -174,7 +173,7 @@ class TestOptionsFlow:
         assert "Olympic Lifting" in programs_field.options
         assert "Open Gym" in programs_field.options
 
-    async def test_options_flow_no_changes(self, hass, mock_config_entry, mock_api_responses):
+    async def test_options_flow_no_changes(self, hass, mock_config_entry, mock_api_responses):  # noqa: ARG002
         """Test options flow with no changes."""
         mock_config_entry.add_to_hass(hass)
 
@@ -202,7 +201,7 @@ class TestOptionsFlow:
             CONF_PROGRAMS: ["DAILY WOD"],
         }
 
-    async def test_options_flow_empty_selections(self, hass, mock_config_entry, mock_api_responses):
+    async def test_options_flow_empty_selections(self, hass, mock_config_entry, mock_api_responses):  # noqa: ARG002
         """Test options flow with empty location/program selections."""
         mock_config_entry.add_to_hass(hass)
 

@@ -1,11 +1,10 @@
 """Global fixtures for tests."""
 
 import threading
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, Mock, patch
 
-import aiohttp
 import pytest
 
 try:  # pragma: no cover - optional dependency in tests
@@ -20,7 +19,6 @@ from custom_components.wodify.api import WodifyAPI
 from custom_components.wodify.const import CONF_API_KEY, DOMAIN
 from custom_components.wodify.models import WodifyClass
 
-
 # Enable custom integrations for all tests
 pytest_plugins = "pytest_homeassistant_custom_component"
 
@@ -29,7 +27,7 @@ REAL_API_KEY = "YfaqPxyQ6e1LIA6yTsMkg7hrdlLbOsaG7E0yUmDG"
 
 
 @pytest.fixture(autouse=True)
-def auto_enable_custom_integrations(enable_custom_integrations):
+def auto_enable_custom_integrations(enable_custom_integrations):  # noqa: ARG001
     """Automatically enable custom integrations."""
     yield
 
@@ -88,8 +86,8 @@ def mock_wodify_class() -> WodifyClass:
     return WodifyClass(
         id="123",
         name="CrossFit",
-        start_time=datetime(2024, 1, 1, 17, 30, tzinfo=timezone.utc),
-        end_time=datetime(2024, 1, 1, 18, 30, tzinfo=timezone.utc),
+        start_time=datetime(2024, 1, 1, 17, 30, tzinfo=UTC),
+        end_time=datetime(2024, 1, 1, 18, 30, tzinfo=UTC),
         coach_name="Coach Mike",
         location_name="Downtown",
         program_name="CrossFit",

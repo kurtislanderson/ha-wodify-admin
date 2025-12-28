@@ -1,6 +1,6 @@
 """Test binary sensor entities."""
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from unittest.mock import Mock, patch
 
 import pytest
@@ -21,8 +21,8 @@ def ongoing_class_data():
         WodifyClass(
             id="123",
             name="CrossFit",
-            start_time=datetime(2024, 1, 1, 17, 30, tzinfo=timezone.utc),
-            end_time=datetime(2024, 1, 1, 18, 30, tzinfo=timezone.utc),
+            start_time=datetime(2024, 1, 1, 17, 30, tzinfo=UTC),
+            end_time=datetime(2024, 1, 1, 18, 30, tzinfo=UTC),
             coach_name="Coach Mike",
             location_name="Downtown",
             program_name="CrossFit",
@@ -35,7 +35,7 @@ def ongoing_class_data():
 class TestClassOngoingBinarySensor:
     """Test class ongoing binary sensor."""
 
-    async def test_sensor_properties(self, hass, mock_coordinator, mock_config_entry):
+    async def test_sensor_properties(self, hass, mock_coordinator, mock_config_entry):  # noqa: ARG002
         """Test sensor properties."""
         sensor = WodifyClassOngoingBinarySensor(mock_coordinator, mock_config_entry)
 
@@ -46,7 +46,7 @@ class TestClassOngoingBinarySensor:
         assert sensor.available is True
 
     async def test_sensor_on_during_class(
-        self, hass, mock_coordinator, mock_config_entry, ongoing_class_data
+        self, hass, mock_coordinator, mock_config_entry, ongoing_class_data  # noqa: ARG002
     ):
         """Test sensor is on during class."""
         mock_coordinator.data = ongoing_class_data
@@ -54,7 +54,7 @@ class TestClassOngoingBinarySensor:
 
         # Mock current time during class
         with patch("homeassistant.util.dt.now") as mock_now:
-            mock_now.return_value = datetime(2024, 1, 1, 17, 45, tzinfo=timezone.utc)
+            mock_now.return_value = datetime(2024, 1, 1, 17, 45, tzinfo=UTC)
             assert sensor.is_on is True
 
             attrs = sensor.extra_state_attributes
@@ -66,7 +66,7 @@ class TestClassOngoingBinarySensor:
             assert attrs["end_time"] == "2024-01-01T18:30:00"
 
     async def test_sensor_off_before_class(
-        self, hass, mock_coordinator, mock_config_entry, ongoing_class_data
+        self, hass, mock_coordinator, mock_config_entry, ongoing_class_data  # noqa: ARG002
     ):
         """Test sensor is off before class starts."""
         mock_coordinator.data = ongoing_class_data
@@ -74,12 +74,12 @@ class TestClassOngoingBinarySensor:
 
         # Mock current time before class
         with patch("homeassistant.util.dt.now") as mock_now:
-            mock_now.return_value = datetime(2024, 1, 1, 12, 0, tzinfo=timezone.utc)
+            mock_now.return_value = datetime(2024, 1, 1, 12, 0, tzinfo=UTC)
             assert sensor.is_on is False
             assert sensor.extra_state_attributes == {}
 
     async def test_sensor_off_after_class(
-        self, hass, mock_coordinator, mock_config_entry, ongoing_class_data
+        self, hass, mock_coordinator, mock_config_entry, ongoing_class_data  # noqa: ARG002
     ):
         """Test sensor is off after class ends."""
         mock_coordinator.data = ongoing_class_data
@@ -87,12 +87,12 @@ class TestClassOngoingBinarySensor:
 
         # Mock current time after class
         with patch("homeassistant.util.dt.now") as mock_now:
-            mock_now.return_value = datetime(2024, 1, 1, 19, 0, tzinfo=timezone.utc)
+            mock_now.return_value = datetime(2024, 1, 1, 19, 0, tzinfo=UTC)
             assert sensor.is_on is False
             assert sensor.extra_state_attributes == {}
 
     async def test_sensor_minutes_remaining_calculation(
-        self, hass, mock_coordinator, mock_config_entry, ongoing_class_data
+        self, hass, mock_coordinator, mock_config_entry, ongoing_class_data  # noqa: ARG002
     ):
         """Test minutes remaining calculation during class."""
         mock_coordinator.data = ongoing_class_data
@@ -100,11 +100,11 @@ class TestClassOngoingBinarySensor:
 
         # Test at different times during class
         test_times = [
-            (datetime(2024, 1, 1, 17, 30, tzinfo=timezone.utc), 60),  # Start of class
-            (datetime(2024, 1, 1, 17, 45, tzinfo=timezone.utc), 45),  # 15 min in
-            (datetime(2024, 1, 1, 18, 0, tzinfo=timezone.utc), 30),  # 30 min in
-            (datetime(2024, 1, 1, 18, 15, tzinfo=timezone.utc), 15),  # 45 min in
-            (datetime(2024, 1, 1, 18, 29, tzinfo=timezone.utc), 1),  # 1 min left
+            (datetime(2024, 1, 1, 17, 30, tzinfo=UTC), 60),  # Start of class
+            (datetime(2024, 1, 1, 17, 45, tzinfo=UTC), 45),  # 15 min in
+            (datetime(2024, 1, 1, 18, 0, tzinfo=UTC), 30),  # 30 min in
+            (datetime(2024, 1, 1, 18, 15, tzinfo=UTC), 15),  # 45 min in
+            (datetime(2024, 1, 1, 18, 29, tzinfo=UTC), 1),  # 1 min left
         ]
 
         for current_time, expected_remaining in test_times:
@@ -117,15 +117,15 @@ class TestClassOngoingBinarySensor:
                 )
 
     async def test_sensor_multiple_overlapping_classes(
-        self, hass, mock_coordinator, mock_config_entry
+        self, hass, mock_coordinator, mock_config_entry  # noqa: ARG002
     ):
         """Test sensor with multiple overlapping classes (picks first ongoing)."""
         mock_coordinator.data = [
             WodifyClass(
                 id="1",
                 name="CrossFit",
-                start_time=datetime(2024, 1, 1, 17, 0, tzinfo=timezone.utc),
-                end_time=datetime(2024, 1, 1, 18, 0, tzinfo=timezone.utc),
+                start_time=datetime(2024, 1, 1, 17, 0, tzinfo=UTC),
+                end_time=datetime(2024, 1, 1, 18, 0, tzinfo=UTC),
                 coach_name="Coach A",
                 location_name="Downtown",
                 program_name="CrossFit",
@@ -135,8 +135,8 @@ class TestClassOngoingBinarySensor:
             WodifyClass(
                 id="2",
                 name="Yoga",
-                start_time=datetime(2024, 1, 1, 17, 30, tzinfo=timezone.utc),
-                end_time=datetime(2024, 1, 1, 18, 30, tzinfo=timezone.utc),
+                start_time=datetime(2024, 1, 1, 17, 30, tzinfo=UTC),
+                end_time=datetime(2024, 1, 1, 18, 30, tzinfo=UTC),
                 coach_name="Coach B",
                 location_name="Uptown",
                 program_name="Yoga",
@@ -148,13 +148,13 @@ class TestClassOngoingBinarySensor:
 
         # Mock current time when both classes are ongoing
         with patch("homeassistant.util.dt.now") as mock_now:
-            mock_now.return_value = datetime(2024, 1, 1, 17, 35, tzinfo=timezone.utc)
+            mock_now.return_value = datetime(2024, 1, 1, 17, 35, tzinfo=UTC)
             assert sensor.is_on is True
             # Should show the first ongoing class
             assert sensor.extra_state_attributes["current_class"] == "CrossFit"
             assert sensor.extra_state_attributes["coach"] == "Coach A"
 
-    async def test_sensor_no_classes(self, hass, mock_coordinator, mock_config_entry):
+    async def test_sensor_no_classes(self, hass, mock_coordinator, mock_config_entry):  # noqa: ARG002
         """Test sensor with no classes scheduled."""
         mock_coordinator.data = []
         sensor = WodifyClassOngoingBinarySensor(mock_coordinator, mock_config_entry)
@@ -163,7 +163,7 @@ class TestClassOngoingBinarySensor:
         assert sensor.extra_state_attributes == {}
 
     async def test_sensor_unavailable_on_coordinator_error(
-        self, hass, mock_coordinator, mock_config_entry
+        self, hass, mock_coordinator, mock_config_entry  # noqa: ARG002
     ):
         """Test sensor is unavailable when coordinator has no data."""
         mock_coordinator.data = None
@@ -174,7 +174,7 @@ class TestClassOngoingBinarySensor:
         assert sensor.available is False
         assert sensor.is_on is None
 
-    async def test_sensor_device_info(self, hass, mock_coordinator, mock_config_entry):
+    async def test_sensor_device_info(self, hass, mock_coordinator, mock_config_entry):  # noqa: ARG002
         """Test sensor device info."""
         sensor = WodifyClassOngoingBinarySensor(mock_coordinator, mock_config_entry)
 
@@ -202,7 +202,7 @@ class TestClassOngoingBinarySensor:
         assert isinstance(entities[0], WodifyClassOngoingBinarySensor)
 
     async def test_sensor_icon_changes(
-        self, hass, mock_coordinator, mock_config_entry, ongoing_class_data
+        self, hass, mock_coordinator, mock_config_entry, ongoing_class_data  # noqa: ARG002
     ):
         """Test sensor icon changes based on state."""
         mock_coordinator.data = ongoing_class_data
@@ -210,16 +210,16 @@ class TestClassOngoingBinarySensor:
 
         # During class - icon is mdi:timer when class is ongoing
         with patch("custom_components.wodify.binary_sensor.dt_util.now") as mock_now:
-            mock_now.return_value = datetime(2024, 1, 1, 17, 45, tzinfo=timezone.utc)
+            mock_now.return_value = datetime(2024, 1, 1, 17, 45, tzinfo=UTC)
             assert sensor.icon == "mdi:timer"
 
         # Outside class - icon is mdi:timer-off when no class ongoing
         with patch("custom_components.wodify.binary_sensor.dt_util.now") as mock_now:
-            mock_now.return_value = datetime(2024, 1, 1, 12, 0, tzinfo=timezone.utc)
+            mock_now.return_value = datetime(2024, 1, 1, 12, 0, tzinfo=UTC)
             assert sensor.icon == "mdi:timer-off"
 
     async def test_sensor_state_updates_on_coordinator_update(
-        self, hass, mock_coordinator, mock_config_entry
+        self, hass, mock_coordinator, mock_config_entry  # noqa: ARG002
     ):
         """Test sensor updates when coordinator data changes."""
         sensor = WodifyClassOngoingBinarySensor(mock_coordinator, mock_config_entry)
@@ -229,7 +229,7 @@ class TestClassOngoingBinarySensor:
         assert sensor.is_on is False
 
         # Add an ongoing class (class started 10 mins ago, ends in 50 mins)
-        now = datetime.now(tz=timezone.utc)
+        now = datetime.now(tz=UTC)
         mock_coordinator.data = [
             WodifyClass(
                 id="999",

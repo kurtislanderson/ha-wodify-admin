@@ -1,11 +1,9 @@
 """Test data update coordinator."""
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
-from homeassistant.exceptions import ConfigEntryAuthFailed
-from homeassistant.helpers.update_coordinator import UpdateFailed
 
 from custom_components.wodify.api import ApiAuthError, ApiError
 from custom_components.wodify.coordinator import WodifyDataUpdateCoordinator
@@ -25,8 +23,8 @@ def sample_classes():
         WodifyClass(
             id="1",
             name="CrossFit",
-            start_time=datetime.now(tz=timezone.utc) + timedelta(hours=1),
-            end_time=datetime.now(tz=timezone.utc) + timedelta(hours=2),
+            start_time=datetime.now(tz=UTC) + timedelta(hours=1),
+            end_time=datetime.now(tz=UTC) + timedelta(hours=2),
             coach_name="Coach A",
             location_name="Downtown",
             program_name="CrossFit",
@@ -37,8 +35,8 @@ def sample_classes():
         WodifyClass(
             id="2",
             name="Yoga",
-            start_time=datetime.now(tz=timezone.utc) + timedelta(hours=3),
-            end_time=datetime.now(tz=timezone.utc) + timedelta(hours=4),
+            start_time=datetime.now(tz=UTC) + timedelta(hours=3),
+            end_time=datetime.now(tz=UTC) + timedelta(hours=4),
             coach_name="Coach B",
             location_name="Uptown",
             program_name="Yoga",
@@ -126,8 +124,8 @@ class TestCoordinator:
             WodifyClass(
                 id="1",
                 name="Active Class",
-                start_time=datetime.now(tz=timezone.utc) + timedelta(hours=1),
-                end_time=datetime.now(tz=timezone.utc) + timedelta(hours=2),
+                start_time=datetime.now(tz=UTC) + timedelta(hours=1),
+                end_time=datetime.now(tz=UTC) + timedelta(hours=2),
                 coach_name="Coach A",
                 location_name="Downtown",
                 program_name="CrossFit",
@@ -138,8 +136,8 @@ class TestCoordinator:
             WodifyClass(
                 id="2",
                 name="Cancelled Class",
-                start_time=datetime.now(tz=timezone.utc) + timedelta(hours=2),
-                end_time=datetime.now(tz=timezone.utc) + timedelta(hours=3),
+                start_time=datetime.now(tz=UTC) + timedelta(hours=2),
+                end_time=datetime.now(tz=UTC) + timedelta(hours=3),
                 coach_name="Coach B",
                 location_name="Downtown",
                 program_name="CrossFit",
@@ -150,8 +148,8 @@ class TestCoordinator:
             WodifyClass(
                 id="3",
                 name="Another Active",
-                start_time=datetime.now(tz=timezone.utc) + timedelta(hours=3),
-                end_time=datetime.now(tz=timezone.utc) + timedelta(hours=4),
+                start_time=datetime.now(tz=UTC) + timedelta(hours=3),
+                end_time=datetime.now(tz=UTC) + timedelta(hours=4),
                 coach_name="Coach C",
                 location_name="Downtown",
                 program_name="CrossFit",
@@ -182,8 +180,8 @@ class TestCoordinator:
             WodifyClass(
                 id="1",
                 name="Class 1",
-                start_time=datetime.now(tz=timezone.utc) + timedelta(hours=1),
-                end_time=datetime.now(tz=timezone.utc) + timedelta(hours=2),
+                start_time=datetime.now(tz=UTC) + timedelta(hours=1),
+                end_time=datetime.now(tz=UTC) + timedelta(hours=2),
                 coach_name="Coach A",
                 location_name="Downtown",
                 program_name="CrossFit",
@@ -194,8 +192,8 @@ class TestCoordinator:
             WodifyClass(
                 id="2",
                 name="Class 2",
-                start_time=datetime.now(tz=timezone.utc) + timedelta(hours=2),
-                end_time=datetime.now(tz=timezone.utc) + timedelta(hours=3),
+                start_time=datetime.now(tz=UTC) + timedelta(hours=2),
+                end_time=datetime.now(tz=UTC) + timedelta(hours=3),
                 coach_name="Coach B",
                 location_name="Downtown",
                 program_name="CrossFit",
@@ -260,7 +258,7 @@ class TestCoordinator:
         )
 
         with patch("custom_components.wodify.coordinator.dt_util.now") as mock_now:
-            mock_now.return_value = datetime(2024, 1, 1, 12, 0, tzinfo=timezone.utc)
+            mock_now.return_value = datetime(2024, 1, 1, 12, 0, tzinfo=UTC)
             await coordinator.async_refresh()
 
         # Verify API was called with correct date range
@@ -270,11 +268,11 @@ class TestCoordinator:
         # Should query from today to 7 days out
         assert (
             call_args["start_date"].date()
-            == datetime(2024, 1, 1, tzinfo=timezone.utc).date()
+            == datetime(2024, 1, 1, tzinfo=UTC).date()
         )
         assert (
             call_args["end_date"].date()
-            == datetime(2024, 1, 8, tzinfo=timezone.utc).date()
+            == datetime(2024, 1, 8, tzinfo=UTC).date()
         )
 
     async def test_coordinator_location_program_filters(self, hass, mock_api):
@@ -315,8 +313,8 @@ class TestCoordinator:
             WodifyClass(
                 id="1",
                 name="Class 1",
-                start_time=datetime.now(tz=timezone.utc) + timedelta(hours=1),
-                end_time=datetime.now(tz=timezone.utc) + timedelta(hours=2),
+                start_time=datetime.now(tz=UTC) + timedelta(hours=1),
+                end_time=datetime.now(tz=UTC) + timedelta(hours=2),
                 coach_name="Coach A",
                 location_name="Downtown",
                 program_name="CrossFit",
@@ -351,8 +349,8 @@ class TestCoordinator:
         active_class = WodifyClass(
             id="1",
             name="Morning CrossFit",
-            start_time=datetime.now(tz=timezone.utc) + timedelta(hours=1),
-            end_time=datetime.now(tz=timezone.utc) + timedelta(hours=2),
+            start_time=datetime.now(tz=UTC) + timedelta(hours=1),
+            end_time=datetime.now(tz=UTC) + timedelta(hours=2),
             coach_name="Coach Mike",
             location_name="Downtown",
             program_name="CrossFit",

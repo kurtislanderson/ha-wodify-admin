@@ -1,6 +1,6 @@
 """Test data models."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
@@ -15,8 +15,8 @@ class TestWodifyClass:
         class_data = WodifyClass(
             id="123",
             name="CrossFit",
-            start_time=datetime(2024, 1, 1, 17, 30, tzinfo=timezone.utc),
-            end_time=datetime(2024, 1, 1, 18, 30, tzinfo=timezone.utc),
+            start_time=datetime(2024, 1, 1, 17, 30, tzinfo=UTC),
+            end_time=datetime(2024, 1, 1, 18, 30, tzinfo=UTC),
             coach_name="Coach Mike",
             location_name="Downtown",
             program_name="CrossFit",
@@ -40,8 +40,8 @@ class TestWodifyClass:
             WodifyClass(
                 id="123",
                 name="CrossFit",
-                start_time=datetime(2024, 1, 1, 17, 30, tzinfo=timezone.utc),
-                end_time=datetime(2024, 1, 1, 18, 30, tzinfo=timezone.utc),
+                start_time=datetime(2024, 1, 1, 17, 30, tzinfo=UTC),
+                end_time=datetime(2024, 1, 1, 18, 30, tzinfo=UTC),
                 coach_name="Coach",
                 location_name="Gym",
                 program_name="CrossFit",
@@ -54,8 +54,8 @@ class TestWodifyClass:
             WodifyClass(
                 id="123",
                 name="CrossFit",
-                start_time=datetime(2024, 1, 1, 17, 30, tzinfo=timezone.utc),
-                end_time=datetime(2024, 1, 1, 18, 30, tzinfo=timezone.utc),
+                start_time=datetime(2024, 1, 1, 17, 30, tzinfo=UTC),
+                end_time=datetime(2024, 1, 1, 18, 30, tzinfo=UTC),
                 coach_name="Coach",
                 location_name="Gym",
                 program_name="CrossFit",
@@ -68,8 +68,8 @@ class TestWodifyClass:
             WodifyClass(
                 id="123",
                 name="CrossFit",
-                start_time=datetime(2024, 1, 1, 18, 30, tzinfo=timezone.utc),
-                end_time=datetime(2024, 1, 1, 17, 30, tzinfo=timezone.utc),
+                start_time=datetime(2024, 1, 1, 18, 30, tzinfo=UTC),
+                end_time=datetime(2024, 1, 1, 17, 30, tzinfo=UTC),
                 coach_name="Coach",
                 location_name="Gym",
                 program_name="CrossFit",
@@ -136,8 +136,8 @@ class TestWodifyClass:
         class_data = WodifyClass(
             id="1",
             name="CrossFit",
-            start_time=datetime(2024, 1, 1, 17, 30, tzinfo=timezone.utc),
-            end_time=datetime(2024, 1, 1, 18, 30, tzinfo=timezone.utc),
+            start_time=datetime(2024, 1, 1, 17, 30, tzinfo=UTC),
+            end_time=datetime(2024, 1, 1, 18, 30, tzinfo=UTC),
             coach_name="Coach",
             location_name="Gym",
             program_name="CrossFit",
@@ -150,8 +150,8 @@ class TestWodifyClass:
         class_data = WodifyClass(
             id="1",
             name="CrossFit",
-            start_time=datetime(2024, 1, 1, 17, 30, tzinfo=timezone.utc),
-            end_time=datetime(2024, 1, 1, 18, 30, tzinfo=timezone.utc),
+            start_time=datetime(2024, 1, 1, 17, 30, tzinfo=UTC),
+            end_time=datetime(2024, 1, 1, 18, 30, tzinfo=UTC),
             coach_name="Coach",
             location_name="Gym",
             program_name="CrossFit",
@@ -164,8 +164,8 @@ class TestWodifyClass:
         class_data = WodifyClass(
             id="1",
             name="CrossFit",
-            start_time=datetime(2024, 1, 1, 17, 30, tzinfo=timezone.utc),
-            end_time=datetime(2024, 1, 1, 18, 30, tzinfo=timezone.utc),
+            start_time=datetime(2024, 1, 1, 17, 30, tzinfo=UTC),
+            end_time=datetime(2024, 1, 1, 18, 30, tzinfo=UTC),
             coach_name="Coach",
             location_name="Gym",
             program_name="CrossFit",
@@ -179,8 +179,8 @@ class TestWodifyClass:
         class_data = WodifyClass(
             id="1",
             name="CrossFit",
-            start_time=datetime(2024, 1, 1, 17, 30, tzinfo=timezone.utc),
-            end_time=datetime(2024, 1, 1, 18, 30, tzinfo=timezone.utc),
+            start_time=datetime(2024, 1, 1, 17, 30, tzinfo=UTC),
+            end_time=datetime(2024, 1, 1, 18, 30, tzinfo=UTC),
             coach_name="Coach",
             location_name="Gym",
             program_name="CrossFit",
@@ -193,8 +193,8 @@ class TestWodifyClass:
         class_data = WodifyClass(
             id="1",
             name="Express",
-            start_time=datetime(2024, 1, 1, 17, 30, tzinfo=timezone.utc),
-            end_time=datetime(2024, 1, 1, 18, 15, tzinfo=timezone.utc),
+            start_time=datetime(2024, 1, 1, 17, 30, tzinfo=UTC),
+            end_time=datetime(2024, 1, 1, 18, 15, tzinfo=UTC),
             coach_name="Coach",
             location_name="Gym",
             program_name="CrossFit",
