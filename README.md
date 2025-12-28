@@ -15,8 +15,13 @@ A Home Assistant integration for Wodify class schedules. Use your Wodify schedul
 - **Real-time class tracking** - Monitor upcoming classes with automatic updates every 5 minutes (configurable 1-60 min)
 - **Smart class blocks** - Automatically detects back-to-back classes (within 30 minutes)
 - **Configurable notifications** - Set custom timing for before-class and after-block alerts
+- **Next Class sensor** - Always see what's coming up next with full details
+- **Current Class sensor** - Shows the active class or "No active class"
+- **Today's Classes sensor** - See all classes scheduled for today with count and details
+- **API Status sensor** - Monitor connection status with cache information
+- **Settings sensor** - View current configuration at a glance
 - **Binary sensor** - Know instantly if you're currently in a class
-- **Next class sensor** - Always see what's coming up next with full details
+- **Refresh button** - Manually refresh class data from the dashboard
 - **Calendar integration** - View your gym schedule in Home Assistant's calendar
 
 ### Automation Events
@@ -28,6 +33,8 @@ A Home Assistant integration for Wodify class schedules. Use your Wodify schedul
 - **Efficient API usage** - Fetches 7 days of upcoming class data
 - **Coach information** - Automatically fetches coach names for the next 10 upcoming classes
 - **Multiple coach support** - Displays all assigned coaches (e.g., "Nick Alexander & Sarah Smith")
+- **Data caching** - Retains class data for 48 hours when API is unavailable
+- **Active program filtering** - Only shows active programs during setup
 - **No external dependencies** - Uses only Home Assistant built-in libraries
 - **Multi-step config flow** - Select specific locations and programs to track
 - **Re-authentication support** - Easily update API keys when needed
@@ -79,9 +86,11 @@ You can adjust settings at any time through the integration options:
 
 ## Entities
 
-### Next Class Sensor
+### Sensors
+
+#### Next Class Sensor
 - **Entity ID**: `sensor.wodify_next_class`
-- **State**: Description of the next upcoming class (e.g., "6:00 AM WOD at 6:00 AM with Coach Name")
+- **State**: Description of the next upcoming class (e.g., "CrossFit at 6:00 AM with Coach Name")
 - **Attributes**:
   - `class_id`: Unique identifier for the class
   - `class_name`: Name of the class
@@ -94,7 +103,51 @@ You can adjust settings at any time through the integration options:
   - `capacity`: Current/max attendees (e.g., "12/20")
   - `is_full`: Boolean indicating if class is at capacity
 
-### Class Ongoing Binary Sensor
+#### Current Class Sensor
+- **Entity ID**: `sensor.wodify_current_class`
+- **State**: Active class name or "No active class"
+- **Attributes** (when class is active):
+  - `class_id`: Unique identifier
+  - `class_name`: Name of the class
+  - `coach`: Instructor name
+  - `location`: Gym location
+  - `program`: Program name
+  - `start_time`, `end_time`: Class timing
+  - `minutes_remaining`: Minutes until class ends
+  - `duration_minutes`: Total class length
+  - `capacity`: Current/max attendees
+  - `is_full`: Boolean
+
+#### Today's Classes Sensor
+- **Entity ID**: `sensor.wodify_todays_classes`
+- **State**: Count of classes today (e.g., "3 classes today" or "No classes today")
+- **Attributes**:
+  - `class_count`: Number of classes scheduled
+  - `classes`: List of all today's classes with full details (id, name, coach, location, program, start_time, end_time, time, duration_minutes, capacity, is_full)
+
+#### API Status Sensor
+- **Entity ID**: `sensor.wodify_api_status`
+- **State**: "Connected" or "Disconnected"
+- **Attributes**:
+  - `connected`: Boolean connection status
+  - `last_successful_update`: Timestamp of last successful API call
+  - `last_error`: Error message (when disconnected)
+  - `cached_classes`: Number of classes in cache
+  - `using_cache`: True when serving cached data
+
+#### Settings Sensor
+- **Entity ID**: `sensor.wodify_settings`
+- **State**: Current update interval (e.g., "Updates every 5 min")
+- **Attributes**:
+  - `update_interval_minutes`: Refresh frequency
+  - `before_class_minutes`: Pre-class notification timing
+  - `after_block_minutes`: Post-block notification timing
+  - `locations`: List of tracked locations
+  - `programs`: List of tracked programs
+
+### Binary Sensors
+
+#### Class Ongoing Binary Sensor
 - **Entity ID**: `binary_sensor.wodify_class_ongoing`
 - **State**: ON during a class, OFF otherwise
 - **Device Class**: `running`
@@ -106,7 +159,15 @@ You can adjust settings at any time through the integration options:
   - `start_time`: When the class started
   - `end_time`: When the class ends
 
-### Classes Calendar
+### Buttons
+
+#### Refresh Button
+- **Entity ID**: `button.wodify_refresh`
+- **Action**: Manually triggers a data refresh from the Wodify API
+
+### Calendar
+
+#### Classes Calendar
 - **Entity ID**: `calendar.wodify_classes`
 - **Description**: Shows all scheduled classes in Home Assistant's calendar view
 - **Event Details**:

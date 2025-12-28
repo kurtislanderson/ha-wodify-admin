@@ -45,4 +45,4 @@ COORDINATOR_UPDATE_METHOD = "_async_update_data"
 CACHE_MAX_AGE_HOURS = 48  # How long to use cached data when API is down (2 days)
 
 # Supported platforms
-PLATFORMS = ["sensor", "binary_sensor", "calendar"]
+PLATFORMS = ["sensor", "binary_sensor", "calendar", "button"]

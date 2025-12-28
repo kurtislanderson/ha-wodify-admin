@@ -8,7 +8,12 @@ from homeassistant.util import dt as dt_util
 
 from custom_components.wodify.const import DOMAIN
 from custom_components.wodify.models import WodifyClass
-from custom_components.wodify.sensor import WodifyNextClassSensor, async_setup_entry
+from custom_components.wodify.sensor import (
+    WodifyNextClassSensor,
+    WodifySettingsSensor,
+    WodifyTodaysClassesSensor,
+    async_setup_entry,
+)
 
 
 @pytest.fixture
@@ -256,7 +261,8 @@ class TestNextClassSensor:
         # Verify entities were added
         async_add_entities.assert_called_once()
         entities = async_add_entities.call_args[0][0]
-        assert len(entities) == 3  # Next Class + Current Class + API Status
+        # Next Class + Current Class + API Status + Today's Classes + Settings
+        assert len(entities) == 5
         assert isinstance(entities[0], WodifyNextClassSensor)
 
     async def test_sensor_state_updates_on_coordinator_update(
@@ -289,3 +295,304 @@ class TestNextClassSensor:
             # State should reflect new data (sensor reads from coordinator.data directly)
             assert "New Class" in sensor.native_value
             assert sensor.extra_state_attributes["coach"] == "Coach New"
+
+
+class TestTodaysClassesSensor:
+    """Test today's classes sensor."""
+
+    async def test_sensor_properties(
+        self,
+        hass,  # noqa: ARG002
+        mock_coordinator,
+        mock_config_entry,
+    ):
+        """Test sensor properties."""
+        mock_coordinator.data = []
+        sensor = WodifyTodaysClassesSensor(mock_coordinator, mock_config_entry)
+
+        assert sensor.unique_id == "test_api_key_todays_classes"
+        assert sensor.name == "Today's Classes"
+        assert sensor.icon == "mdi:calendar-today"
+        assert sensor.should_poll is False
+
+    async def test_sensor_no_classes_today(
+        self,
+        hass,  # noqa: ARG002
+        mock_coordinator,
+        mock_config_entry,
+    ):
+        """Test sensor when no classes today."""
+        mock_coordinator.data = []
+        sensor = WodifyTodaysClassesSensor(mock_coordinator, mock_config_entry)
+
+        with patch("custom_components.wodify.sensor.dt_util.now") as mock_now:
+            mock_now.return_value = datetime(2024, 1, 1, 12, 0, tzinfo=UTC)
+            assert sensor.native_value == "No classes today"
+            assert sensor.extra_state_attributes["class_count"] == 0
+            assert sensor.extra_state_attributes["classes"] == []
+
+    async def test_sensor_one_class_today(
+        self,
+        hass,  # noqa: ARG002
+        mock_coordinator,
+        mock_config_entry,
+    ):
+        """Test sensor with one class today."""
+        mock_coordinator.data = [
+            WodifyClass(
+                id="123",
+                name="CrossFit",
+                start_time=datetime(2024, 1, 1, 17, 30, tzinfo=UTC),
+                end_time=datetime(2024, 1, 1, 18, 30, tzinfo=UTC),
+                coach_name="Coach Mike",
+                location_name="Downtown",
+                program_name="CrossFit",
+                max_attendees=20,
+                current_attendees=15,
+            ),
+        ]
+        sensor = WodifyTodaysClassesSensor(mock_coordinator, mock_config_entry)
+
+        with patch("custom_components.wodify.sensor.dt_util.now") as mock_now:
+            mock_now.return_value = datetime(2024, 1, 1, 12, 0, tzinfo=UTC)
+            assert sensor.native_value == "1 class today"
+            attrs = sensor.extra_state_attributes
+            assert attrs["class_count"] == 1
+            assert len(attrs["classes"]) == 1
+            assert attrs["classes"][0]["name"] == "CrossFit"
+            assert attrs["classes"][0]["coach"] == "Coach Mike"
+
+    async def test_sensor_multiple_classes_today(
+        self,
+        hass,  # noqa: ARG002
+        mock_coordinator,
+        mock_config_entry,
+    ):
+        """Test sensor with multiple classes today."""
+        mock_coordinator.data = [
+            WodifyClass(
+                id="123",
+                name="Morning CrossFit",
+                start_time=datetime(2024, 1, 1, 6, 0, tzinfo=UTC),
+                end_time=datetime(2024, 1, 1, 7, 0, tzinfo=UTC),
+                coach_name="Coach Mike",
+                location_name="Downtown",
+                program_name="CrossFit",
+                max_attendees=20,
+                current_attendees=15,
+            ),
+            WodifyClass(
+                id="456",
+                name="Noon CrossFit",
+                start_time=datetime(2024, 1, 1, 12, 0, tzinfo=UTC),
+                end_time=datetime(2024, 1, 1, 13, 0, tzinfo=UTC),
+                coach_name="Coach Sarah",
+                location_name="Downtown",
+                program_name="CrossFit",
+                max_attendees=20,
+                current_attendees=10,
+            ),
+            WodifyClass(
+                id="789",
+                name="Evening CrossFit",
+                start_time=datetime(2024, 1, 1, 17, 30, tzinfo=UTC),
+                end_time=datetime(2024, 1, 1, 18, 30, tzinfo=UTC),
+                coach_name="Coach Tim",
+                location_name="Downtown",
+                program_name="CrossFit",
+                max_attendees=20,
+                current_attendees=18,
+            ),
+        ]
+        sensor = WodifyTodaysClassesSensor(mock_coordinator, mock_config_entry)
+
+        with patch("custom_components.wodify.sensor.dt_util.now") as mock_now:
+            mock_now.return_value = datetime(2024, 1, 1, 5, 0, tzinfo=UTC)
+            assert sensor.native_value == "3 classes today"
+            attrs = sensor.extra_state_attributes
+            assert attrs["class_count"] == 3
+            assert len(attrs["classes"]) == 3
+            # Verify classes are sorted by start time
+            assert attrs["classes"][0]["name"] == "Morning CrossFit"
+            assert attrs["classes"][1]["name"] == "Noon CrossFit"
+            assert attrs["classes"][2]["name"] == "Evening CrossFit"
+
+    async def test_sensor_filters_other_days(
+        self,
+        hass,  # noqa: ARG002
+        mock_coordinator,
+        mock_config_entry,
+    ):
+        """Test sensor only shows today's classes."""
+        mock_coordinator.data = [
+            WodifyClass(
+                id="123",
+                name="Today CrossFit",
+                start_time=datetime(2024, 1, 1, 17, 30, tzinfo=UTC),
+                end_time=datetime(2024, 1, 1, 18, 30, tzinfo=UTC),
+                coach_name="Coach Mike",
+                location_name="Downtown",
+                program_name="CrossFit",
+                max_attendees=20,
+                current_attendees=15,
+            ),
+            WodifyClass(
+                id="456",
+                name="Tomorrow CrossFit",
+                start_time=datetime(2024, 1, 2, 17, 30, tzinfo=UTC),
+                end_time=datetime(2024, 1, 2, 18, 30, tzinfo=UTC),
+                coach_name="Coach Sarah",
+                location_name="Downtown",
+                program_name="CrossFit",
+                max_attendees=20,
+                current_attendees=10,
+            ),
+        ]
+        sensor = WodifyTodaysClassesSensor(mock_coordinator, mock_config_entry)
+
+        with patch("custom_components.wodify.sensor.dt_util.now") as mock_now:
+            mock_now.return_value = datetime(2024, 1, 1, 12, 0, tzinfo=UTC)
+            assert sensor.native_value == "1 class today"
+            attrs = sensor.extra_state_attributes
+            assert attrs["class_count"] == 1
+            assert attrs["classes"][0]["name"] == "Today CrossFit"
+
+    async def test_sensor_filters_cancelled(
+        self,
+        hass,  # noqa: ARG002
+        mock_coordinator,
+        mock_config_entry,
+    ):
+        """Test sensor filters out cancelled classes."""
+        mock_coordinator.data = [
+            WodifyClass(
+                id="123",
+                name="Active CrossFit",
+                start_time=datetime(2024, 1, 1, 17, 30, tzinfo=UTC),
+                end_time=datetime(2024, 1, 1, 18, 30, tzinfo=UTC),
+                coach_name="Coach Mike",
+                location_name="Downtown",
+                program_name="CrossFit",
+                max_attendees=20,
+                current_attendees=15,
+                is_cancelled=False,
+            ),
+            WodifyClass(
+                id="456",
+                name="Cancelled CrossFit",
+                start_time=datetime(2024, 1, 1, 12, 0, tzinfo=UTC),
+                end_time=datetime(2024, 1, 1, 13, 0, tzinfo=UTC),
+                coach_name="Coach Sarah",
+                location_name="Downtown",
+                program_name="CrossFit",
+                max_attendees=20,
+                current_attendees=0,
+                is_cancelled=True,
+            ),
+        ]
+        sensor = WodifyTodaysClassesSensor(mock_coordinator, mock_config_entry)
+
+        with patch("custom_components.wodify.sensor.dt_util.now") as mock_now:
+            mock_now.return_value = datetime(2024, 1, 1, 10, 0, tzinfo=UTC)
+            assert sensor.native_value == "1 class today"
+            attrs = sensor.extra_state_attributes
+            assert attrs["class_count"] == 1
+            assert attrs["classes"][0]["name"] == "Active CrossFit"
+
+    async def test_sensor_class_attributes(
+        self,
+        hass,  # noqa: ARG002
+        mock_coordinator,
+        mock_config_entry,
+    ):
+        """Test sensor class attributes contain all expected fields."""
+        mock_coordinator.data = [
+            WodifyClass(
+                id="123",
+                name="CrossFit",
+                start_time=datetime(2024, 1, 1, 17, 30, tzinfo=UTC),
+                end_time=datetime(2024, 1, 1, 18, 30, tzinfo=UTC),
+                coach_name="Coach Mike",
+                location_name="Downtown",
+                program_name="CrossFit",
+                max_attendees=20,
+                current_attendees=15,
+            ),
+        ]
+        sensor = WodifyTodaysClassesSensor(mock_coordinator, mock_config_entry)
+
+        with patch("custom_components.wodify.sensor.dt_util.now") as mock_now:
+            mock_now.return_value = datetime(2024, 1, 1, 12, 0, tzinfo=UTC)
+            attrs = sensor.extra_state_attributes
+            class_data = attrs["classes"][0]
+
+            assert class_data["id"] == "123"
+            assert class_data["name"] == "CrossFit"
+            assert class_data["coach"] == "Coach Mike"
+            assert class_data["location"] == "Downtown"
+            assert class_data["program"] == "CrossFit"
+            assert class_data["start_time"] == "2024-01-01T17:30:00"
+            assert class_data["end_time"] == "2024-01-01T18:30:00"
+            assert "time" in class_data  # Formatted short time
+            assert class_data["duration_minutes"] == 60
+            assert class_data["capacity"] == "15/20"
+            assert class_data["is_full"] is False
+
+    async def test_sensor_unavailable_on_coordinator_error(
+        self,
+        hass,  # noqa: ARG002
+        mock_coordinator,
+        mock_config_entry,
+    ):
+        """Test sensor is unavailable when coordinator has no data."""
+        mock_coordinator.data = None
+        mock_coordinator.last_update_success = False
+
+        sensor = WodifyTodaysClassesSensor(mock_coordinator, mock_config_entry)
+
+        assert sensor.available is False
+        assert sensor.native_value == "Unavailable"
+
+
+class TestSettingsSensor:
+    """Test settings sensor."""
+
+    async def test_sensor_properties(
+        self,
+        hass,  # noqa: ARG002
+        mock_config_entry,
+    ):
+        """Test sensor properties."""
+        sensor = WodifySettingsSensor(mock_config_entry)
+
+        assert sensor.unique_id == "test_api_key_settings"
+        assert sensor.name == "Settings"
+        assert sensor.icon == "mdi:cog"
+        assert sensor.should_poll is False
+        assert sensor.available is True
+
+    async def test_sensor_state(
+        self,
+        hass,  # noqa: ARG002
+        mock_config_entry,
+    ):
+        """Test sensor state shows update interval."""
+        sensor = WodifySettingsSensor(mock_config_entry)
+
+        # Default update interval is 5 minutes
+        assert sensor.native_value == "Updates every 5 min"
+
+    async def test_sensor_attributes(
+        self,
+        hass,  # noqa: ARG002
+        mock_config_entry,
+    ):
+        """Test sensor attributes contain all settings."""
+        sensor = WodifySettingsSensor(mock_config_entry)
+        attrs = sensor.extra_state_attributes
+
+        assert attrs["update_interval_minutes"] == 5
+        assert attrs["before_class_minutes"] == 15
+        assert attrs["after_block_minutes"] == 15
+        assert attrs["locations"] == ["CrossFit inner loop"]
+        assert attrs["programs"] == ["DAILY WOD"]

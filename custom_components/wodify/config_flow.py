@@ -33,7 +33,14 @@ from .const import (
 
 
 def _extract_program_names(programs: Iterable[dict[str, Any]]) -> list[str]:
-    return sorted({str(program.get("name")) for program in programs if program.get("name")})
+    """Extract program names from API response, filtering by is_active."""
+    return sorted(
+        {
+            str(program.get("name"))
+            for program in programs
+            if program.get("name") and program.get("is_active", True)
+        }
+    )
 
 
 def _extract_locations(classes: Iterable[Any]) -> list[str]:

@@ -57,7 +57,7 @@ def test_constants_defined():
 
     # Platforms
     assert hasattr(const, "PLATFORMS")
-    assert const.PLATFORMS == ["sensor", "binary_sensor", "calendar"]
+    assert const.PLATFORMS == ["sensor", "binary_sensor", "calendar", "button"]
 
 
 def test_constants_types():

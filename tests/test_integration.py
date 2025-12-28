@@ -437,10 +437,11 @@ class TestIntegration:
         # Verify entities have unique IDs
         ent_reg = er.async_get(hass)
         entities = er.async_entries_for_config_entry(ent_reg, entry1.entry_id)
-        assert len(entities) == 5  # next_class, current_class, api_status, binary_sensor, calendar
+        # next_class, current_class, api_status, todays_classes, settings, binary_sensor, calendar, button
+        assert len(entities) == 8
 
         entities2 = er.async_entries_for_config_entry(ent_reg, entry2.entry_id)
-        assert len(entities2) == 5
+        assert len(entities2) == 8
 
         # Ensure no overlap
         entity1_ids = {e.unique_id for e in entities}
