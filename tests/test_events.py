@@ -347,3 +347,165 @@ class TestEventManager:
         await event_manager.handle_class_cancelled("1", mock_coordinator_with_events.data[0])
         assert "Cancelled pending starts_soon event for class 1" in caplog.text
         assert "Fired cancellation event for class 1" in caplog.text
+
+    async def test_binary_sensor_registration(self, hass, mock_coordinator_with_events):
+        """Test binary sensor registration with event manager."""
+        event_manager = WodifyEventManager(hass, mock_coordinator_with_events, 15, 15)
+
+        # Create mock sensors
+        mock_sensor_1 = Mock()
+        mock_sensor_1._attr_unique_id = "test_class_starting_soon"
+        mock_sensor_2 = Mock()
+        mock_sensor_2._attr_unique_id = "test_block_starting_soon"
+        mock_sensor_3 = Mock()
+        mock_sensor_3._attr_unique_id = "test_block_just_ended"
+        mock_sensor_4 = Mock()
+        mock_sensor_4._attr_unique_id = "test_class_ongoing"
+
+        sensors = [mock_sensor_1, mock_sensor_2, mock_sensor_3, mock_sensor_4]
+
+        # Register sensors
+        event_manager.register_binary_sensors(sensors)
+
+        assert event_manager._binary_sensors == sensors
+
+    async def test_sensor_schedules_created(self, hass, mock_coordinator_with_events):
+        """Test that sensor schedules are created when sensors are registered."""
+        event_manager = WodifyEventManager(hass, mock_coordinator_with_events, 15, 15)
+
+        # Create mock sensors
+        mock_class_starting = Mock()
+        mock_class_starting._attr_unique_id = "test_class_starting_soon"
+        mock_block_starting = Mock()
+        mock_block_starting._attr_unique_id = "test_block_starting_soon"
+        mock_block_ended = Mock()
+        mock_block_ended._attr_unique_id = "test_block_just_ended"
+        mock_ongoing = Mock()
+        mock_ongoing._attr_unique_id = "test_class_ongoing"
+
+        sensors = [mock_class_starting, mock_block_starting, mock_block_ended, mock_ongoing]
+
+        with patch("custom_components.wodify.events.dt_util.now") as mock_now:
+            mock_now.return_value = datetime.now(tz=UTC).replace(microsecond=0)
+            event_manager.register_binary_sensors(sensors)
+
+        # Should have sensor schedules
+        assert len(event_manager._sensor_schedules) > 0
+
+    async def test_sensor_schedules_cancelled_on_reschedule(
+        self, hass, mock_coordinator_with_events
+    ):
+        """Test that sensor schedules are cancelled when events are rescheduled."""
+        event_manager = WodifyEventManager(hass, mock_coordinator_with_events, 15, 15)
+
+        # Create mock sensor
+        mock_sensor = Mock()
+        mock_sensor._attr_unique_id = "test_class_starting_soon"
+
+        with patch("custom_components.wodify.events.dt_util.now") as mock_now:
+            mock_now.return_value = datetime.now(tz=UTC).replace(microsecond=0)
+            event_manager.register_binary_sensors([mock_sensor])
+
+            # Get initial schedules
+            initial_schedules = list(event_manager._sensor_schedules.values())
+
+            # Reschedule
+            event_manager.schedule_events()
+
+            # Initial schedules should be cancelled
+            assert all(s.cancelled() for s in initial_schedules)
+
+    async def test_cancelled_classes_excluded_from_sensor_scheduling(self, hass, mock_coordinator):
+        """Test that cancelled classes are excluded from sensor scheduling."""
+        # Create one active and one cancelled class
+        base_time = datetime.now(tz=UTC).replace(microsecond=0)
+        active_class = WodifyClass(
+            id="active",
+            name="Active Class",
+            start_time=base_time + timedelta(hours=1),
+            end_time=base_time + timedelta(hours=2),
+            coach_name="Coach",
+            location_name="Gym",
+            program_name="CrossFit",
+            max_attendees=20,
+            current_attendees=10,
+        )
+        cancelled_class = WodifyClass(
+            id="cancelled",
+            name="Cancelled Class",
+            start_time=base_time + timedelta(hours=3),
+            end_time=base_time + timedelta(hours=4),
+            coach_name="Coach",
+            location_name="Gym",
+            program_name="CrossFit",
+            max_attendees=20,
+            current_attendees=10,
+            is_cancelled=True,
+        )
+
+        mock_coordinator.data = [active_class, cancelled_class]
+        event_manager = WodifyEventManager(hass, mock_coordinator, 15, 15)
+
+        mock_sensor = Mock()
+        mock_sensor._attr_unique_id = "test_class_starting_soon"
+
+        with patch("custom_components.wodify.events.dt_util.now") as mock_now:
+            mock_now.return_value = base_time
+            event_manager.register_binary_sensors([mock_sensor])
+
+        # Should only have schedules for active class
+        schedule_keys = list(event_manager._sensor_schedules.keys())
+        assert any("active" in key for key in schedule_keys)
+        assert not any("cancelled" in key for key in schedule_keys)
+
+    async def test_sensor_schedules_include_all_sensor_types(
+        self, hass, mock_coordinator_with_events
+    ):
+        """Test that schedules are created for all sensor types."""
+        event_manager = WodifyEventManager(hass, mock_coordinator_with_events, 15, 15)
+
+        # Create all sensor types
+        mock_class_starting = Mock()
+        mock_class_starting._attr_unique_id = "test_class_starting_soon"
+        mock_block_starting = Mock()
+        mock_block_starting._attr_unique_id = "test_block_starting_soon"
+        mock_block_ended = Mock()
+        mock_block_ended._attr_unique_id = "test_block_just_ended"
+        mock_ongoing = Mock()
+        mock_ongoing._attr_unique_id = "test_class_ongoing"
+
+        sensors = [mock_class_starting, mock_block_starting, mock_block_ended, mock_ongoing]
+
+        with patch("custom_components.wodify.events.dt_util.now") as mock_now:
+            mock_now.return_value = datetime.now(tz=UTC).replace(microsecond=0)
+            event_manager.register_binary_sensors(sensors)
+
+        schedule_keys = list(event_manager._sensor_schedules.keys())
+
+        # Should have schedules for each sensor type
+        assert any("class_starting" in key for key in schedule_keys)
+        assert any("block_starting" in key for key in schedule_keys)
+        assert any("block_ended" in key for key in schedule_keys)
+        assert any("class_ongoing" in key for key in schedule_keys)
+
+    async def test_cancel_all_includes_sensor_schedules(self, hass, mock_coordinator_with_events):
+        """Test that cancel_all_events also cancels sensor schedules."""
+        event_manager = WodifyEventManager(hass, mock_coordinator_with_events, 15, 15)
+
+        mock_sensor = Mock()
+        mock_sensor._attr_unique_id = "test_class_starting_soon"
+
+        with patch("custom_components.wodify.events.dt_util.now") as mock_now:
+            mock_now.return_value = datetime.now(tz=UTC).replace(microsecond=0)
+            event_manager.register_binary_sensors([mock_sensor])
+
+        # Verify schedules exist
+        sensor_schedules = list(event_manager._sensor_schedules.values())
+        assert len(sensor_schedules) > 0
+
+        # Cancel all
+        event_manager.cancel_all_events()
+
+        # Verify all cancelled
+        assert len(event_manager._sensor_schedules) == 0
+        assert all(s.cancelled() for s in sensor_schedules)

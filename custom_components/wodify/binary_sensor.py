@@ -33,14 +33,20 @@ async def async_setup_entry(
     """Set up the Wodify binary sensors."""
     runtime = hass.data[DOMAIN][config_entry.entry_id]
     coordinator: WodifyDataUpdateCoordinator = runtime["coordinator"]
+    event_manager = runtime.get("event_manager")
 
-    async_add_entities(
-        [
-            WodifyClassOngoingBinarySensor(coordinator, config_entry),
-            WodifyClassStartingSoonBinarySensor(coordinator, config_entry),
-            WodifyBlockJustEndedBinarySensor(coordinator, config_entry),
-        ]
-    )
+    sensors = [
+        WodifyClassOngoingBinarySensor(coordinator, config_entry),
+        WodifyClassStartingSoonBinarySensor(coordinator, config_entry),
+        WodifyBlockStartingSoonBinarySensor(coordinator, config_entry),
+        WodifyBlockJustEndedBinarySensor(coordinator, config_entry),
+    ]
+
+    async_add_entities(sensors)
+
+    # Register sensors with event manager for time-based state updates
+    if event_manager:
+        event_manager.register_binary_sensors(sensors)
 
 
 class WodifyClassOngoingBinarySensor(
@@ -135,15 +141,15 @@ class WodifyClassOngoingBinarySensor(
 class WodifyClassStartingSoonBinarySensor(
     CoordinatorEntity[WodifyDataUpdateCoordinator], BinarySensorEntity
 ):
-    """Binary sensor that turns ON when a class starts within the configured minutes.
+    """Binary sensor that turns ON when any class starts within the configured minutes.
 
-    Use this sensor to trigger pre-class automations (e.g., turn on TVs, lights).
+    Use this sensor to trigger pre-class automations for EACH class.
     Turns ON when: now is within `before_class_minutes` of the next class start time.
     """
 
     _attr_should_poll = False
     _attr_device_class = BinarySensorDeviceClass.OCCUPANCY
-    _attr_name = "Class Block Starting Soon"
+    _attr_name = "Class Starting Soon"
 
     def __init__(self, coordinator: WodifyDataUpdateCoordinator, config_entry: ConfigEntry) -> None:
         super().__init__(coordinator)
@@ -215,6 +221,142 @@ class WodifyClassStartingSoonBinarySensor(
                 "location": next_class.location_name,
                 "minutes_until_class": max(0, minutes_until),
                 "class_start_time": self._format_time(next_class.start_time),
+            }
+        )
+        return attributes
+
+    @property
+    def icon(self) -> str:
+        return "mdi:timer" if self.is_on else "mdi:timer-off"
+
+    @property
+    def device_info(self) -> dict[str, object]:
+        return {
+            "identifiers": {(DOMAIN, self._config_entry.entry_id)},
+            "name": "Wodify",
+            "manufacturer": "Wodify",
+            "model": "Gym Schedule",
+        }
+
+
+class WodifyBlockStartingSoonBinarySensor(
+    CoordinatorEntity[WodifyDataUpdateCoordinator], BinarySensorEntity
+):
+    """Binary sensor that turns ON when a class BLOCK starts within the configured minutes.
+
+    Use this sensor to trigger pre-block automations (e.g., turn on TVs, lights).
+    Only triggers before the FIRST class of a block, not before each class.
+    Turns ON when: now is within `before_class_minutes` of the first class of the next block.
+    """
+
+    _attr_should_poll = False
+    _attr_device_class = BinarySensorDeviceClass.OCCUPANCY
+    _attr_name = "Class Block Starting Soon"
+
+    def __init__(self, coordinator: WodifyDataUpdateCoordinator, config_entry: ConfigEntry) -> None:
+        super().__init__(coordinator)
+        self._config_entry = config_entry
+        unique_source = config_entry.unique_id or config_entry.entry_id
+        self._attr_unique_id = f"{unique_source}_block_starting_soon"
+
+    @property
+    def _before_minutes(self) -> int:
+        return self._config_entry.options.get(
+            CONF_BEFORE_CLASS_MINUTES, DEFAULT_BEFORE_CLASS_MINUTES
+        )
+
+    @property
+    def available(self) -> bool:
+        data = self.coordinator.data
+        return bool(data is not None and self.coordinator.last_update_success)
+
+    def _next_block(self) -> list[WodifyClass] | None:
+        """Find the next block that hasn't started yet."""
+        if not self.coordinator.data:
+            return None
+        now = dt_util.now()
+        blocks = detect_class_blocks(self.coordinator.data)
+
+        for block in blocks:
+            if not block:
+                continue
+            first_class = block[0]
+            # Block hasn't started yet
+            if first_class.start_time > now:
+                return block
+        return None
+
+    def _is_inside_block(self) -> bool:
+        """Check if we're currently inside a block (between first class start and last class end)."""
+        if not self.coordinator.data:
+            return False
+        now = dt_util.now()
+        blocks = detect_class_blocks(self.coordinator.data)
+
+        for block in blocks:
+            if not block:
+                continue
+            first_class = block[0]
+            last_class = block[-1]
+            if first_class.start_time <= now < last_class.end_time:
+                return True
+        return False
+
+    @property
+    def is_on(self) -> bool | None:
+        if not self.available:
+            return None
+        # Don't trigger if we're already inside a block
+        if self._is_inside_block():
+            return False
+        next_block = self._next_block()
+        if not next_block:
+            return False
+        first_class = next_block[0]
+        now = dt_util.now()
+        time_until_start = (first_class.start_time - now).total_seconds() / 60
+        return 0 < time_until_start <= self._before_minutes
+
+    @staticmethod
+    def _format_time(value: datetime) -> str:
+        return value.strftime("%Y-%m-%dT%H:%M:%S")
+
+    @property
+    def extra_state_attributes(self) -> dict[str, object]:
+        """Return attributes for the pre-block trigger sensor.
+
+        Attributes:
+            trigger_window_minutes: Configured minutes before block to trigger (5-60)
+            first_class: Name of the first class in the block
+            coach: Coach name for the first class
+            location: Location of the block
+            block_class_count: Number of classes in the block
+            block_duration_minutes: Total duration of the block
+            minutes_until_block: Minutes until the block starts
+            block_start_time: ISO formatted start time of the block
+        """
+        attributes: dict[str, object] = {
+            "trigger_window_minutes": self._before_minutes,
+        }
+        next_block = self._next_block()
+        if next_block is None:
+            return attributes
+
+        first_class = next_block[0]
+        last_class = next_block[-1]
+        now = dt_util.now()
+        minutes_until = int((first_class.start_time - now).total_seconds() // 60)
+        block_duration = int((last_class.end_time - first_class.start_time).total_seconds() // 60)
+
+        attributes.update(
+            {
+                "first_class": first_class.name,
+                "coach": first_class.coach_name,
+                "location": first_class.location_name,
+                "block_class_count": len(next_block),
+                "block_duration_minutes": block_duration,
+                "minutes_until_block": max(0, minutes_until),
+                "block_start_time": self._format_time(first_class.start_time),
             }
         )
         return attributes

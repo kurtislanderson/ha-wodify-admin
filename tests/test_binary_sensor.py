@@ -217,8 +217,8 @@ class TestClassOngoingBinarySensor:
         # Verify entities were added
         async_add_entities.assert_called_once()
         entities = async_add_entities.call_args[0][0]
-        # 3 binary sensors: ongoing, starting_soon, block_ended
-        assert len(entities) == 3
+        # 4 binary sensors: ongoing, class_starting_soon, block_starting_soon, block_ended
+        assert len(entities) == 4
         assert isinstance(entities[0], WodifyClassOngoingBinarySensor)
 
     async def test_sensor_icon_changes(

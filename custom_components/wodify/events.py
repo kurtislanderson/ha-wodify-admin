@@ -110,16 +110,26 @@ class WodifyEventManager:
         self.after_block_minutes = after_block_minutes
         self._upcoming_events: dict[str, _ScheduledEvent] = {}
         self._block_end_events: dict[str, _ScheduledEvent] = {}
+        self._sensor_schedules: dict[str, _ScheduledEvent] = {}
+        self._binary_sensors: list = []
 
         # Link back to the coordinator so cancellation detection can notify us
         coordinator.event_manager = self
 
         _ensure_async_call_later(hass)
 
+    def register_binary_sensors(self, sensors: list) -> None:
+        """Store references to binary sensors for time-based state updates."""
+        self._binary_sensors = sensors
+        # Schedule updates immediately if we have data
+        if self.coordinator.data:
+            self._schedule_sensor_updates()
+
     def schedule_events(self) -> None:
         """Schedule events for all upcoming classes."""
 
         self._cancel_all_events()
+        self._schedule_sensor_updates()
 
         classes = sorted(self.coordinator.data or [], key=lambda cls: cls.start_time)
         if not classes:
@@ -260,13 +270,186 @@ class WodifyEventManager:
         _LOGGER.info("Fired cancellation event for class %s", class_id)
         self.hass.bus.async_fire(EVENT_CLASS_CANCELLED, event_data)
 
+    def _schedule_sensor_updates(self) -> None:
+        """Schedule exact-time state updates for binary sensors."""
+        if not self._binary_sensors:
+            return
+
+        # Cancel old sensor schedules
+        for handle in list(self._sensor_schedules.values()):
+            handle.cancel()
+        self._sensor_schedules.clear()
+
+        now = dt_util.now()
+        classes = [c for c in (self.coordinator.data or []) if not c.is_cancelled]
+        if not classes:
+            return
+
+        blocks = detect_class_blocks(classes)
+
+        # Find sensors by type
+        class_starting_sensor = None
+        block_starting_sensor = None
+        block_ended_sensor = None
+        class_ongoing_sensor = None
+
+        for sensor in self._binary_sensors:
+            sensor_id = getattr(sensor, "_attr_unique_id", "")
+            if "class_starting_soon" in sensor_id and "block" not in sensor_id:
+                class_starting_sensor = sensor
+            elif "block_starting_soon" in sensor_id:
+                block_starting_sensor = sensor
+            elif "block_just_ended" in sensor_id:
+                block_ended_sensor = sensor
+            elif "class_ongoing" in sensor_id:
+                class_ongoing_sensor = sensor
+
+        # Schedule Class Starting Soon sensor updates (before each class)
+        if class_starting_sensor:
+            for wodify_class in classes:
+                if wodify_class.end_time <= now:
+                    continue
+                # Schedule ON at: start_time - before_minutes
+                on_time = wodify_class.start_time - timedelta(minutes=self.before_class_minutes)
+                if on_time > now:
+                    delay = (on_time - now).total_seconds()
+                    key = f"class_starting_on_{wodify_class.id}"
+                    self._sensor_schedules[key] = _ScheduledEvent(
+                        self.hass,
+                        delay,
+                        lambda s=class_starting_sensor: s.async_write_ha_state(),
+                    )
+                    _LOGGER.debug("Scheduled class_starting ON at %s (delay %.1fs)", on_time, delay)
+
+                # Schedule OFF at: start_time (class has started)
+                if wodify_class.start_time > now:
+                    delay = (wodify_class.start_time - now).total_seconds()
+                    key = f"class_starting_off_{wodify_class.id}"
+                    self._sensor_schedules[key] = _ScheduledEvent(
+                        self.hass,
+                        delay,
+                        lambda s=class_starting_sensor: s.async_write_ha_state(),
+                    )
+                    _LOGGER.debug(
+                        "Scheduled class_starting OFF at %s (delay %.1fs)",
+                        wodify_class.start_time,
+                        delay,
+                    )
+
+        # Schedule Block Starting Soon sensor updates (before first class of each block)
+        if block_starting_sensor:
+            for block in blocks:
+                if not block:
+                    continue
+                first_class = block[0]
+                last_class = block[-1]
+
+                # Skip if block already ended
+                if last_class.end_time <= now:
+                    continue
+
+                # Schedule ON at: block_start - before_minutes
+                on_time = first_class.start_time - timedelta(minutes=self.before_class_minutes)
+                if on_time > now:
+                    delay = (on_time - now).total_seconds()
+                    key = f"block_starting_on_{first_class.id}"
+                    self._sensor_schedules[key] = _ScheduledEvent(
+                        self.hass,
+                        delay,
+                        lambda s=block_starting_sensor: s.async_write_ha_state(),
+                    )
+                    _LOGGER.debug("Scheduled block_starting ON at %s (delay %.1fs)", on_time, delay)
+
+                # Schedule OFF at: block_start (first class has started)
+                if first_class.start_time > now:
+                    delay = (first_class.start_time - now).total_seconds()
+                    key = f"block_starting_off_{first_class.id}"
+                    self._sensor_schedules[key] = _ScheduledEvent(
+                        self.hass,
+                        delay,
+                        lambda s=block_starting_sensor: s.async_write_ha_state(),
+                    )
+                    _LOGGER.debug(
+                        "Scheduled block_starting OFF at %s (delay %.1fs)",
+                        first_class.start_time,
+                        delay,
+                    )
+
+        # Schedule Block Just Ended sensor updates (after last class of each block)
+        if block_ended_sensor:
+            for block in blocks:
+                if not block:
+                    continue
+                last_class = block[-1]
+
+                # Schedule ON at: block_end (last class ended)
+                if last_class.end_time > now:
+                    delay = (last_class.end_time - now).total_seconds()
+                    key = f"block_ended_on_{last_class.id}"
+                    self._sensor_schedules[key] = _ScheduledEvent(
+                        self.hass,
+                        delay,
+                        lambda s=block_ended_sensor: s.async_write_ha_state(),
+                    )
+                    _LOGGER.debug(
+                        "Scheduled block_ended ON at %s (delay %.1fs)", last_class.end_time, delay
+                    )
+
+                # Schedule OFF at: block_end + after_minutes
+                off_time = last_class.end_time + timedelta(minutes=self.after_block_minutes)
+                if off_time > now:
+                    delay = (off_time - now).total_seconds()
+                    key = f"block_ended_off_{last_class.id}"
+                    self._sensor_schedules[key] = _ScheduledEvent(
+                        self.hass,
+                        delay,
+                        lambda s=block_ended_sensor: s.async_write_ha_state(),
+                    )
+                    _LOGGER.debug("Scheduled block_ended OFF at %s (delay %.1fs)", off_time, delay)
+
+        # Schedule Class Ongoing sensor updates (during each class)
+        if class_ongoing_sensor:
+            for wodify_class in classes:
+                # Schedule ON at: start_time
+                if wodify_class.start_time > now:
+                    delay = (wodify_class.start_time - now).total_seconds()
+                    key = f"class_ongoing_on_{wodify_class.id}"
+                    self._sensor_schedules[key] = _ScheduledEvent(
+                        self.hass,
+                        delay,
+                        lambda s=class_ongoing_sensor: s.async_write_ha_state(),
+                    )
+                    _LOGGER.debug(
+                        "Scheduled class_ongoing ON at %s (delay %.1fs)",
+                        wodify_class.start_time,
+                        delay,
+                    )
+
+                # Schedule OFF at: end_time
+                if wodify_class.end_time > now:
+                    delay = (wodify_class.end_time - now).total_seconds()
+                    key = f"class_ongoing_off_{wodify_class.id}"
+                    self._sensor_schedules[key] = _ScheduledEvent(
+                        self.hass,
+                        delay,
+                        lambda s=class_ongoing_sensor: s.async_write_ha_state(),
+                    )
+                    _LOGGER.debug(
+                        "Scheduled class_ongoing OFF at %s (delay %.1fs)",
+                        wodify_class.end_time,
+                        delay,
+                    )
+
     def _cancel_all_events(self) -> None:
         for handle in list(self._upcoming_events.values()):
             handle.cancel()
         for handle in list(self._block_end_events.values()):
             handle.cancel()
+        for handle in list(self._sensor_schedules.values()):
+            handle.cancel()
         self._upcoming_events.clear()
         self._block_end_events.clear()
+        self._sensor_schedules.clear()
 
     def cancel_all_events(self) -> None:
         """Cancel all scheduled events (public interface)."""

@@ -170,6 +170,8 @@ You can adjust settings at any time through the integration options:
 
 ### Binary Sensors
 
+All binary sensors use **precise time-based scheduling** to trigger at exact times, independent of the API polling interval. See [Precise Timing](#precise-timing) for details.
+
 #### Class Ongoing
 - **Entity ID**: `binary_sensor.wodify_class_ongoing`
 - **State**: ON during a class, OFF otherwise
@@ -188,12 +190,13 @@ You can adjust settings at any time through the integration options:
   - `capacity`: Current/max attendees (e.g., "12/20")
   - `attendees_signed_in`: Number signed in
 
-#### Class Block Starting Soon
+#### Class Starting Soon
 - **Entity ID**: `binary_sensor.wodify_class_starting_soon`
-- **State**: ON when a class starts within the configured trigger window, OFF otherwise
+- **State**: ON within the trigger window before EACH class, OFF otherwise
 - **Device Class**: `occupancy`
 - **Icon**: `mdi:timer` (on) / `mdi:timer-off` (off)
-- **Use Case**: Trigger automations to prepare for class (turn on TVs, lights, HVAC, etc.)
+- **Use Case**: Trigger automations before every individual class (announcements, music changes, etc.)
+- **Note**: Triggers before every class, including back-to-back classes in a block
 - **Attributes**:
   - `trigger_window_minutes`: Configured minutes before class to trigger (5-60)
   - `next_class`: Name of upcoming class
@@ -201,6 +204,23 @@ You can adjust settings at any time through the integration options:
   - `location`: Gym location
   - `minutes_until_class`: Minutes until class starts
   - `class_start_time`: ISO formatted start time
+
+#### Class Block Starting Soon
+- **Entity ID**: `binary_sensor.wodify_block_starting_soon`
+- **State**: ON within the trigger window before the FIRST class of a block only, OFF otherwise
+- **Device Class**: `occupancy`
+- **Icon**: `mdi:timer` (on) / `mdi:timer-off` (off)
+- **Use Case**: Trigger automations once per block of back-to-back classes (turn on TVs, lights, HVAC, etc.)
+- **Note**: Only fires before the first class of a block, not before every class. A "block" is a group of back-to-back classes with gaps less than 30 minutes between them
+- **Attributes**:
+  - `trigger_window_minutes`: Configured minutes before block to trigger (5-60)
+  - `first_class`: Name of first class in block
+  - `coach`: Instructor name
+  - `location`: Gym location
+  - `block_class_count`: Number of classes in block
+  - `block_duration_minutes`: Total block duration
+  - `minutes_until_block`: Minutes until block starts
+  - `block_start_time`: ISO formatted start time
 
 #### Class Block Just Ended
 - **Entity ID**: `binary_sensor.wodify_block_just_ended`
@@ -262,19 +282,29 @@ Update pre-class and post-block trigger timing.
 | `before_class_minutes` | No | Pre-class trigger window in minutes (5-60, default: 15) |
 | `after_block_minutes` | No | Post-block trigger window in minutes (5-60, default: 15) |
 
+## Precise Timing
+
+Binary sensors use **time-based scheduling** to trigger at exact times, independent of the API polling interval. For example, if a class starts at 9:15 AM and the trigger window is 15 minutes, the sensor will turn ON at exactly 9:00 AM - not at the next poll time.
+
+This means you can set a longer polling interval (e.g., 30 minutes) to reduce API calls while still getting precise automation triggers. The scheduling is recalculated whenever:
+- New class data is fetched from the API
+- A class is cancelled
+- Integration settings are changed
+
 ## Automations
 
-The integration provides two binary sensors specifically designed for triggering automations:
-- **Class Block Starting Soon**: Turns ON within X minutes before a class starts
+The integration provides three binary sensors specifically designed for triggering automations:
+- **Class Starting Soon**: Turns ON within X minutes before EACH class
+- **Class Block Starting Soon**: Turns ON within X minutes before the FIRST class of a block
 - **Class Block Just Ended**: Turns ON within X minutes after a class block ends
 
-### Example: Turn On TVs & Lights Before Class
+### Example: Turn On TVs & Lights Before Block
 ```yaml
 automation:
-  - alias: "Gym Pre-Class Setup"
+  - alias: "Gym Pre-Block Setup"
     trigger:
       - platform: state
-        entity_id: binary_sensor.wodify_class_starting_soon
+        entity_id: binary_sensor.wodify_block_starting_soon
         to: "on"
     action:
       - service: media_player.turn_on
@@ -283,6 +313,24 @@ automation:
       - service: light.turn_on
         target:
           entity_id: light.gym_lights
+```
+
+### Example: Announce Each Class
+```yaml
+automation:
+  - alias: "Announce Each Class"
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.wodify_class_starting_soon
+        to: "on"
+    action:
+      - service: tts.speak
+        target:
+          entity_id: media_player.gym_speaker
+        data:
+          message: >
+            {{ state_attr('binary_sensor.wodify_class_starting_soon', 'next_class') }}
+            starting in {{ state_attr('binary_sensor.wodify_class_starting_soon', 'minutes_until_class') }} minutes
 ```
 
 ### Example: Turn Off TVs & Lights After Class Block
@@ -303,7 +351,7 @@ automation:
 ```
 
 ### Using Trigger Window Attributes
-Both sensors expose a `trigger_window_minutes` attribute showing the configured timing:
+All trigger sensors expose a `trigger_window_minutes` attribute showing the configured timing:
 ```yaml
 automation:
   - alias: "Log Trigger Info"
