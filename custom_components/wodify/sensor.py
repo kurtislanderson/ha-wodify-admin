@@ -171,7 +171,9 @@ class WodifyCurrentClassSensor(CoordinatorEntity[WodifyDataUpdateCoordinator], S
         if not current_class:
             return "No active class"
 
-        return f"{current_class.name} with {current_class.coach_name}"
+        start_local = dt_util.as_local(current_class.start_time)
+        time_str = start_local.strftime("%I:%M %p").lstrip("0")
+        return f"{current_class.name} at {time_str} with {current_class.coach_name}"
 
     @staticmethod
     def _format_time(value: datetime) -> str:
@@ -221,11 +223,6 @@ class WodifyCurrentClassSensor(CoordinatorEntity[WodifyDataUpdateCoordinator], S
             }
         )
         return attributes
-
-    @property
-    def icon(self) -> str:
-        """Return different icon based on whether a class is ongoing."""
-        return "mdi:timer" if self._current_class() else "mdi:timer-off"
 
     @property
     def device_info(self) -> dict[str, object]:

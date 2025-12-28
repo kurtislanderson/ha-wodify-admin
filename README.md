@@ -182,6 +182,34 @@ You can adjust settings at any time through the integration options:
   - `start_time`: When the class started
   - `end_time`: When the class ends
 
+#### Class Starting Soon Binary Sensor
+- **Entity ID**: `binary_sensor.wodify_class_starting_soon`
+- **State**: ON when a class starts within the configured "before class minutes", OFF otherwise
+- **Device Class**: `occupancy`
+- **Use Case**: Trigger automations to prepare for class (lights, music, HVAC, etc.)
+- **Attributes**:
+  - `before_class_minutes`: Configured trigger window
+  - `next_class`: Name of upcoming class
+  - `coach`: Instructor name
+  - `location`: Gym location
+  - `minutes_until_start`: Minutes until class starts
+  - `start_time`: When the class starts
+
+#### Block Just Ended Binary Sensor
+- **Entity ID**: `binary_sensor.wodify_block_just_ended`
+- **State**: ON for the configured "after block minutes" after a class block ends, OFF otherwise
+- **Device Class**: `occupancy`
+- **Use Case**: Trigger post-workout automations (cool down, turn off equipment, etc.)
+- **Attributes**:
+  - `after_block_minutes`: Configured trigger window
+  - `last_class`: Name of last class in block
+  - `coach`: Instructor name
+  - `location`: Gym location
+  - `block_class_count`: Number of classes in the block
+  - `block_duration_minutes`: Total duration of the block
+  - `minutes_since_end`: Minutes since block ended
+  - `block_end_time`: When the block ended
+
 ### Buttons
 
 #### Refresh Button
