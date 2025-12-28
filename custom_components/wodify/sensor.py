@@ -110,6 +110,15 @@ class WodifyNextClassSensor(CoordinatorEntity[WodifyDataUpdateCoordinator], Sens
                 "duration_minutes": next_class.duration_minutes,
                 "capacity": capacity,
                 "is_full": next_class.is_full,
+                "attendees_reserved": next_class.attendees_reserved,
+                "attendees_signed_in": next_class.attendees_signed_in,
+                "attendees_drop_in": next_class.attendees_drop_in,
+                "attendees_waitlisted": next_class.attendees_waitlisted,
+                "available_slots": next_class.available_slots,
+                "attendees_cancelled": next_class.attendees_cancelled,
+                "attendees_no_show": next_class.attendees_no_show,
+                "percent_filled": next_class.percent_filled,
+                "count_towards_attendance_limits": next_class.count_towards_attendance_limits,
             }
         )
         return attributes
@@ -200,6 +209,15 @@ class WodifyCurrentClassSensor(CoordinatorEntity[WodifyDataUpdateCoordinator], S
                 "duration_minutes": current_class.duration_minutes,
                 "capacity": capacity,
                 "is_full": current_class.is_full,
+                "attendees_reserved": current_class.attendees_reserved,
+                "attendees_signed_in": current_class.attendees_signed_in,
+                "attendees_drop_in": current_class.attendees_drop_in,
+                "attendees_waitlisted": current_class.attendees_waitlisted,
+                "available_slots": current_class.available_slots,
+                "attendees_cancelled": current_class.attendees_cancelled,
+                "attendees_no_show": current_class.attendees_no_show,
+                "percent_filled": current_class.percent_filled,
+                "count_towards_attendance_limits": current_class.count_towards_attendance_limits,
             }
         )
         return attributes
@@ -361,6 +379,15 @@ class WodifyTodaysClassesSensor(CoordinatorEntity[WodifyDataUpdateCoordinator], 
                     "duration_minutes": cls.duration_minutes,
                     "capacity": capacity,
                     "is_full": cls.is_full,
+                    "attendees_reserved": cls.attendees_reserved,
+                    "attendees_signed_in": cls.attendees_signed_in,
+                    "attendees_drop_in": cls.attendees_drop_in,
+                    "attendees_waitlisted": cls.attendees_waitlisted,
+                    "available_slots": cls.available_slots,
+                    "attendees_cancelled": cls.attendees_cancelled,
+                    "attendees_no_show": cls.attendees_no_show,
+                    "percent_filled": cls.percent_filled,
+                    "count_towards_attendance_limits": cls.count_towards_attendance_limits,
                 }
             )
 

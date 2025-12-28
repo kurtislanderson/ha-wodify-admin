@@ -218,6 +218,50 @@ class TestWodifyClass:
         assert class_data.max_attendees == 0
         assert class_data.current_attendees == 0
         assert class_data.is_cancelled is False
+        # New attendee fields should default to 0 or True
+        assert class_data.attendees_reserved == 0
+        assert class_data.attendees_signed_in == 0
+        assert class_data.attendees_drop_in == 0
+        assert class_data.attendees_waitlisted == 0
+        assert class_data.available_slots == 0
+        assert class_data.attendees_cancelled == 0
+        assert class_data.attendees_no_show == 0
+        assert class_data.percent_filled == 0
+        assert class_data.count_towards_attendance_limits is True
+
+    def test_wodify_class_attendee_fields(self):
+        """Test parsing of attendee breakdown fields from API."""
+        api_data = {
+            "id": "123",
+            "name": "CrossFit",
+            "start_date_time": "2024-01-01T17:30:00Z",
+            "end_date_time": "2024-01-01T18:30:00Z",
+            "location": "Downtown",
+            "program_name": "CrossFit",
+            "class_limit": 20,
+            "reserved": 10,
+            "signed_in": 5,
+            "drop_in": 2,
+            "waitlisted": 3,
+            "available": 5,
+            "cancelled": 1,
+            "no_show": 2,
+            "percent_filled": 75,
+            "count_towards_attendance_limits": False,
+        }
+
+        class_data = WodifyClass.from_api_response(api_data)
+        assert class_data.attendees_reserved == 10
+        assert class_data.attendees_signed_in == 5
+        assert class_data.attendees_drop_in == 2
+        assert class_data.attendees_waitlisted == 3
+        assert class_data.available_slots == 5
+        assert class_data.attendees_cancelled == 1
+        assert class_data.attendees_no_show == 2
+        assert class_data.percent_filled == 75
+        assert class_data.count_towards_attendance_limits is False
+        # current_attendees should be reserved + signed_in
+        assert class_data.current_attendees == 15
 
     def test_wodify_class_timezone_handling(self):
         """Test timezone handling in datetime parsing."""

@@ -369,6 +369,7 @@ class TestIntegration:
                     "update_interval": 10,
                     "before_class_minutes": 30,
                     "after_block_minutes": 20,
+                    "exclude_private_training": True,
                     "locations": ["Downtown"],
                     "programs": ["CrossFit"],
                 },

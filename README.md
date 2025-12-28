@@ -15,6 +15,7 @@ A Home Assistant integration for Wodify class schedules. Use your Wodify schedul
 - **Real-time class tracking** - Monitor upcoming classes with automatic updates every 5 minutes (configurable 1-60 min)
 - **Smart class blocks** - Automatically detects back-to-back classes (within 30 minutes)
 - **Configurable notifications** - Set custom timing for before-class and after-block alerts
+- **Private training filter** - Optionally exclude private training sessions from class lists
 - **Next Class sensor** - Always see what's coming up next with full details
 - **Current Class sensor** - Shows the active class or "No active class"
 - **Today's Classes sensor** - See all classes scheduled for today with count and details
@@ -23,6 +24,7 @@ A Home Assistant integration for Wodify class schedules. Use your Wodify schedul
 - **Binary sensor** - Know instantly if you're currently in a class
 - **Refresh button** - Manually refresh class data from the dashboard
 - **Calendar integration** - View your gym schedule in Home Assistant's calendar
+- **Detailed attendee info** - Full breakdown of reserved, signed-in, waitlisted, and more
 
 ### Automation Events
 - `wodify_class_starts_soon` - Fires before a class starts (default: 15 min)
@@ -82,7 +84,8 @@ You can adjust settings at any time through the integration options:
 1. Go to the Wodify integration
 2. Click "Configure"
 3. Adjust timing preferences, locations, or programs
-4. Changes take effect immediately
+4. Toggle **Exclude Private Training** to hide/show private training sessions
+5. Changes take effect immediately
 
 ## Entities
 
@@ -102,6 +105,15 @@ You can adjust settings at any time through the integration options:
   - `duration_minutes`: Length of the class in minutes
   - `capacity`: Current/max attendees (e.g., "12/20")
   - `is_full`: Boolean indicating if class is at capacity
+  - `attendees_reserved`: Number of reservations
+  - `attendees_signed_in`: Number signed in
+  - `attendees_drop_in`: Number of drop-in attendees
+  - `attendees_waitlisted`: Number on waitlist
+  - `available_slots`: Available spots remaining
+  - `attendees_cancelled`: Number of cancellations
+  - `attendees_no_show`: Number of no-shows
+  - `percent_filled`: Percentage of class capacity filled
+  - `count_towards_attendance_limits`: Whether class counts toward limits
 
 #### Current Class Sensor
 - **Entity ID**: `sensor.wodify_current_class`
@@ -117,13 +129,24 @@ You can adjust settings at any time through the integration options:
   - `duration_minutes`: Total class length
   - `capacity`: Current/max attendees
   - `is_full`: Boolean
+  - `attendees_reserved`: Number of reservations
+  - `attendees_signed_in`: Number signed in
+  - `attendees_drop_in`: Number of drop-in attendees
+  - `attendees_waitlisted`: Number on waitlist
+  - `available_slots`: Available spots remaining
+  - `attendees_cancelled`: Number of cancellations
+  - `attendees_no_show`: Number of no-shows
+  - `percent_filled`: Percentage of class capacity filled
+  - `count_towards_attendance_limits`: Whether class counts toward limits
 
 #### Today's Classes Sensor
 - **Entity ID**: `sensor.wodify_todays_classes`
 - **State**: Count of classes today (e.g., "3 classes today" or "No classes today")
 - **Attributes**:
   - `class_count`: Number of classes scheduled
-  - `classes`: List of all today's classes with full details (id, name, coach, location, program, start_time, end_time, time, duration_minutes, capacity, is_full)
+  - `classes`: List of all today's classes with full details including:
+    - Basic: id, name, coach, location, program, start_time, end_time, time, duration_minutes, capacity, is_full
+    - Attendee breakdown: attendees_reserved, attendees_signed_in, attendees_drop_in, attendees_waitlisted, available_slots, attendees_cancelled, attendees_no_show, percent_filled, count_towards_attendance_limits
 
 #### API Status Sensor
 - **Entity ID**: `sensor.wodify_api_status`

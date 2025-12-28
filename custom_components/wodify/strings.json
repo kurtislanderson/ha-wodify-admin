@@ -63,6 +63,7 @@
           "update_interval": "Update interval (minutes)",
           "before_class_minutes": "Minutes before class to notify",
           "after_block_minutes": "Minutes after class block ends to notify",
+          "exclude_private_training": "Exclude Private Training",
           "locations": "Locations",
           "programs": "Programs"
         }

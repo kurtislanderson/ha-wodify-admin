@@ -113,12 +113,14 @@ class WodifyDataUpdateCoordinator(DataUpdateCoordinator[list[WodifyClass]]):
         locations: list[str],
         programs: list[str],
         update_interval: int,
+        exclude_private_training: bool = True,
     ) -> None:
         """Initialise the coordinator."""
 
         self.api = api
         self.locations = locations
         self.programs = programs
+        self.exclude_private_training = exclude_private_training
         self.event_manager: Any | None = None
         self.last_data: dict[str, WodifyClass] = {}
 
@@ -191,7 +193,8 @@ class WodifyDataUpdateCoordinator(DataUpdateCoordinator[list[WodifyClass]]):
     async def _async_update_data(self) -> list[WodifyClass]:
         """Fetch classes from the Wodify API and detect cancellations."""
 
-        start_date = dt_util.now()
+        # Start from midnight today to include all of today's classes
+        start_date = dt_util.now().replace(hour=0, minute=0, second=0, microsecond=0)
         end_date = start_date + timedelta(days=7)
 
         try:
@@ -245,6 +248,9 @@ class WodifyDataUpdateCoordinator(DataUpdateCoordinator[list[WodifyClass]]):
             if cls.is_cancelled:
                 if previous and not previous.is_cancelled:
                     cancellations.append(cls)
+                continue
+            # Filter out private training classes if configured
+            if self.exclude_private_training and "private training" in cls.name.lower():
                 continue
             active_classes.append(cls)
 

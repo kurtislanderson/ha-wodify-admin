@@ -13,11 +13,13 @@ from .const import (
     CONF_AFTER_BLOCK_MINUTES,
     CONF_API_KEY,
     CONF_BEFORE_CLASS_MINUTES,
+    CONF_EXCLUDE_PRIVATE_TRAINING,
     CONF_LOCATIONS,
     CONF_PROGRAMS,
     CONF_UPDATE_INTERVAL,
     DEFAULT_AFTER_BLOCK_MINUTES,
     DEFAULT_BEFORE_CLASS_MINUTES,
+    DEFAULT_EXCLUDE_PRIVATE_TRAINING,
     DEFAULT_UPDATE_INTERVAL,
     DOMAIN,
     PLATFORMS,
@@ -47,6 +49,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     update_interval = entry.options.get(CONF_UPDATE_INTERVAL, DEFAULT_UPDATE_INTERVAL)
     before_minutes = entry.options.get(CONF_BEFORE_CLASS_MINUTES, DEFAULT_BEFORE_CLASS_MINUTES)
     after_minutes = entry.options.get(CONF_AFTER_BLOCK_MINUTES, DEFAULT_AFTER_BLOCK_MINUTES)
+    exclude_private = entry.options.get(
+        CONF_EXCLUDE_PRIVATE_TRAINING, DEFAULT_EXCLUDE_PRIVATE_TRAINING
+    )
 
     # Create API client
     session = async_get_clientsession(hass)
@@ -59,6 +64,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         locations=locations,
         programs=programs,
         update_interval=update_interval,
+        exclude_private_training=exclude_private,
     )
 
     # Create event manager

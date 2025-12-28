@@ -65,6 +65,16 @@ class WodifyClass:
     max_attendees: int = 0
     current_attendees: int = 0
     is_cancelled: bool = False
+    # Attendee breakdown fields (prefixed to avoid confusion with is_cancelled)
+    attendees_reserved: int = 0
+    attendees_signed_in: int = 0
+    attendees_drop_in: int = 0
+    attendees_waitlisted: int = 0
+    available_slots: int = 0
+    attendees_cancelled: int = 0
+    attendees_no_show: int = 0
+    percent_filled: int = 0
+    count_towards_attendance_limits: bool = True
 
     def __post_init__(self) -> None:
         """Validate the incoming data."""
@@ -112,7 +122,20 @@ class WodifyClass:
         program_name = data.get("program_name") or DEFAULT_PROGRAM_NAME
 
         max_attendees = int(data.get("class_limit") or 0)
-        current_attendees = int(data.get("reserved") or 0)
+
+        # Parse attendee breakdown fields
+        attendees_reserved = int(data.get("reserved") or 0)
+        attendees_signed_in = int(data.get("signed_in") or 0)
+        attendees_drop_in = int(data.get("drop_in") or 0)
+        attendees_waitlisted = int(data.get("waitlisted") or 0)
+        available_slots = int(data.get("available") or 0)
+        attendees_cancelled = int(data.get("cancelled") or 0)
+        attendees_no_show = int(data.get("no_show") or 0)
+        percent_filled = int(data.get("percent_filled") or 0)
+        count_towards_attendance_limits = bool(data.get("count_towards_attendance_limits", True))
+
+        # Calculate current attendees (reserved + signed_in for backwards compat)
+        current_attendees = attendees_reserved
         for extra_key in ("signed_in", "checked_in", "attending"):
             extra_value = data.get(extra_key)
             if extra_value:
@@ -134,6 +157,15 @@ class WodifyClass:
             max_attendees=max_attendees,
             current_attendees=current_attendees,
             is_cancelled=cancelled_flag,
+            attendees_reserved=attendees_reserved,
+            attendees_signed_in=attendees_signed_in,
+            attendees_drop_in=attendees_drop_in,
+            attendees_waitlisted=attendees_waitlisted,
+            available_slots=available_slots,
+            attendees_cancelled=attendees_cancelled,
+            attendees_no_show=attendees_no_show,
+            percent_filled=percent_filled,
+            count_towards_attendance_limits=count_towards_attendance_limits,
         )
 
 

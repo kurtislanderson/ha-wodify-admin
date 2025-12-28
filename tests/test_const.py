@@ -16,6 +16,7 @@ def test_constants_defined():
     assert hasattr(const, "CONF_UPDATE_INTERVAL")
     assert hasattr(const, "CONF_BEFORE_CLASS_MINUTES")
     assert hasattr(const, "CONF_AFTER_BLOCK_MINUTES")
+    assert hasattr(const, "CONF_EXCLUDE_PRIVATE_TRAINING")
 
     # Defaults
     assert hasattr(const, "DEFAULT_UPDATE_INTERVAL")
@@ -24,6 +25,8 @@ def test_constants_defined():
     assert const.DEFAULT_BEFORE_CLASS_MINUTES == 15
     assert hasattr(const, "DEFAULT_AFTER_BLOCK_MINUTES")
     assert const.DEFAULT_AFTER_BLOCK_MINUTES == 15
+    assert hasattr(const, "DEFAULT_EXCLUDE_PRIVATE_TRAINING")
+    assert const.DEFAULT_EXCLUDE_PRIVATE_TRAINING is True
 
     # Ranges
     assert hasattr(const, "MIN_UPDATE_INTERVAL")

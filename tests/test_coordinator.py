@@ -368,3 +368,98 @@ class TestCoordinator:
 
         # Check log message
         assert "Class 1 (Morning CrossFit) was cancelled" in caplog.text
+
+    async def test_coordinator_filters_private_training(self, hass, mock_api):
+        """Test coordinator filters out private training classes when configured."""
+        classes = [
+            WodifyClass(
+                id="1",
+                name="CrossFit",
+                start_time=datetime.now(tz=UTC) + timedelta(hours=1),
+                end_time=datetime.now(tz=UTC) + timedelta(hours=2),
+                coach_name="Coach A",
+                location_name="Downtown",
+                program_name="CrossFit",
+                max_attendees=20,
+                current_attendees=10,
+                is_cancelled=False,
+            ),
+            WodifyClass(
+                id="2",
+                name="Private Training",
+                start_time=datetime.now(tz=UTC) + timedelta(hours=2),
+                end_time=datetime.now(tz=UTC) + timedelta(hours=3),
+                coach_name="Coach B",
+                location_name="Downtown",
+                program_name="Private Training",
+                max_attendees=1,
+                current_attendees=1,
+                is_cancelled=False,
+            ),
+            WodifyClass(
+                id="3",
+                name="private training session",
+                start_time=datetime.now(tz=UTC) + timedelta(hours=3),
+                end_time=datetime.now(tz=UTC) + timedelta(hours=4),
+                coach_name="Coach C",
+                location_name="Downtown",
+                program_name="Personal",
+                max_attendees=1,
+                current_attendees=1,
+                is_cancelled=False,
+            ),
+        ]
+
+        mock_api.search_classes = AsyncMock(return_value=classes)
+
+        # With exclude_private_training=True (default)
+        coordinator = WodifyDataUpdateCoordinator(
+            hass, mock_api, ["Downtown"], ["CrossFit"], 5, exclude_private_training=True
+        )
+
+        await coordinator.async_refresh()
+
+        # Should only include non-private training classes
+        assert len(coordinator.data) == 1
+        assert coordinator.data[0].id == "1"
+
+    async def test_coordinator_includes_private_training_when_disabled(self, hass, mock_api):
+        """Test coordinator includes private training when filter is disabled."""
+        classes = [
+            WodifyClass(
+                id="1",
+                name="CrossFit",
+                start_time=datetime.now(tz=UTC) + timedelta(hours=1),
+                end_time=datetime.now(tz=UTC) + timedelta(hours=2),
+                coach_name="Coach A",
+                location_name="Downtown",
+                program_name="CrossFit",
+                max_attendees=20,
+                current_attendees=10,
+                is_cancelled=False,
+            ),
+            WodifyClass(
+                id="2",
+                name="Private Training",
+                start_time=datetime.now(tz=UTC) + timedelta(hours=2),
+                end_time=datetime.now(tz=UTC) + timedelta(hours=3),
+                coach_name="Coach B",
+                location_name="Downtown",
+                program_name="Private Training",
+                max_attendees=1,
+                current_attendees=1,
+                is_cancelled=False,
+            ),
+        ]
+
+        mock_api.search_classes = AsyncMock(return_value=classes)
+
+        # With exclude_private_training=False
+        coordinator = WodifyDataUpdateCoordinator(
+            hass, mock_api, ["Downtown"], ["CrossFit"], 5, exclude_private_training=False
+        )
+
+        await coordinator.async_refresh()
+
+        # Should include all classes
+        assert len(coordinator.data) == 2

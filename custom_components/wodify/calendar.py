@@ -54,9 +54,17 @@ class WodifyCalendar(CoordinatorEntity[WodifyDataUpdateCoordinator], CalendarEnt
         if wodify_class.is_full:
             attendees += " (FULL)"
 
-        description = (
-            f"{wodify_class.program_name} at {wodify_class.location_name}\nAttendees: {attendees}"
-        )
+        # Build detailed description with attendee breakdown
+        description_parts = [
+            f"{wodify_class.program_name} at {wodify_class.location_name}",
+            f"Attendees: {attendees}",
+        ]
+        if wodify_class.percent_filled > 0:
+            description_parts.append(f"Filled: {wodify_class.percent_filled}%")
+        if wodify_class.attendees_waitlisted > 0:
+            description_parts.append(f"Waitlisted: {wodify_class.attendees_waitlisted}")
+
+        description = "\n".join(description_parts)
 
         event = CalendarEvent(
             summary=f"{wodify_class.name} - {wodify_class.coach_name}",

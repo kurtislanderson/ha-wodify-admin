@@ -9,6 +9,7 @@ from homeassistant.data_entry_flow import FlowResultType
 from custom_components.wodify.const import (
     CONF_AFTER_BLOCK_MINUTES,
     CONF_BEFORE_CLASS_MINUTES,
+    CONF_EXCLUDE_PRIVATE_TRAINING,
     CONF_LOCATIONS,
     CONF_PROGRAMS,
     CONF_UPDATE_INTERVAL,
@@ -80,6 +81,7 @@ class TestOptionsFlow:
         assert CONF_UPDATE_INTERVAL in schema
         assert CONF_BEFORE_CLASS_MINUTES in schema
         assert CONF_AFTER_BLOCK_MINUTES in schema
+        assert CONF_EXCLUDE_PRIVATE_TRAINING in schema
         assert CONF_LOCATIONS in schema
         assert CONF_PROGRAMS in schema
 
@@ -90,6 +92,7 @@ class TestOptionsFlow:
                 CONF_UPDATE_INTERVAL: 10,
                 CONF_BEFORE_CLASS_MINUTES: 30,
                 CONF_AFTER_BLOCK_MINUTES: 20,
+                CONF_EXCLUDE_PRIVATE_TRAINING: True,
                 CONF_LOCATIONS: ["CrossFit inner loop"],
                 CONF_PROGRAMS: ["DAILY WOD"],
             },
@@ -99,6 +102,7 @@ class TestOptionsFlow:
         assert result["data"][CONF_UPDATE_INTERVAL] == 10
         assert result["data"][CONF_BEFORE_CLASS_MINUTES] == 30
         assert result["data"][CONF_AFTER_BLOCK_MINUTES] == 20
+        assert result["data"][CONF_EXCLUDE_PRIVATE_TRAINING] is True
         assert result["data"][CONF_LOCATIONS] == ["CrossFit inner loop"]
         assert result["data"][CONF_PROGRAMS] == ["DAILY WOD"]
 
@@ -118,6 +122,7 @@ class TestOptionsFlow:
                     CONF_UPDATE_INTERVAL: 0,  # Too low - schema catches this
                     CONF_BEFORE_CLASS_MINUTES: 15,
                     CONF_AFTER_BLOCK_MINUTES: 15,
+                    CONF_EXCLUDE_PRIVATE_TRAINING: True,
                     CONF_LOCATIONS: ["CrossFit inner loop"],
                     CONF_PROGRAMS: ["DAILY WOD"],
                 },
@@ -134,6 +139,7 @@ class TestOptionsFlow:
                     CONF_UPDATE_INTERVAL: 5,
                     CONF_BEFORE_CLASS_MINUTES: 3,  # Too low - schema catches this
                     CONF_AFTER_BLOCK_MINUTES: 15,
+                    CONF_EXCLUDE_PRIVATE_TRAINING: True,
                     CONF_LOCATIONS: ["CrossFit inner loop"],
                     CONF_PROGRAMS: ["DAILY WOD"],
                 },
@@ -150,6 +156,7 @@ class TestOptionsFlow:
                     CONF_UPDATE_INTERVAL: 5,
                     CONF_BEFORE_CLASS_MINUTES: 15,
                     CONF_AFTER_BLOCK_MINUTES: 100,  # Too high - schema catches this
+                    CONF_EXCLUDE_PRIVATE_TRAINING: True,
                     CONF_LOCATIONS: ["CrossFit inner loop"],
                     CONF_PROGRAMS: ["DAILY WOD"],
                 },
@@ -189,6 +196,7 @@ class TestOptionsFlow:
                 CONF_UPDATE_INTERVAL: 5,
                 CONF_BEFORE_CLASS_MINUTES: 15,
                 CONF_AFTER_BLOCK_MINUTES: 15,
+                CONF_EXCLUDE_PRIVATE_TRAINING: True,
                 CONF_LOCATIONS: ["CrossFit inner loop"],
                 CONF_PROGRAMS: ["DAILY WOD"],
             },
@@ -200,6 +208,7 @@ class TestOptionsFlow:
             CONF_UPDATE_INTERVAL: 5,
             CONF_BEFORE_CLASS_MINUTES: 15,
             CONF_AFTER_BLOCK_MINUTES: 15,
+            CONF_EXCLUDE_PRIVATE_TRAINING: True,
             CONF_LOCATIONS: ["CrossFit inner loop"],
             CONF_PROGRAMS: ["DAILY WOD"],
         }
@@ -217,6 +226,7 @@ class TestOptionsFlow:
                 CONF_UPDATE_INTERVAL: 5,
                 CONF_BEFORE_CLASS_MINUTES: 15,
                 CONF_AFTER_BLOCK_MINUTES: 15,
+                CONF_EXCLUDE_PRIVATE_TRAINING: True,
                 CONF_LOCATIONS: [],
                 CONF_PROGRAMS: ["DAILY WOD"],
             },
@@ -232,6 +242,7 @@ class TestOptionsFlow:
                 CONF_UPDATE_INTERVAL: 5,
                 CONF_BEFORE_CLASS_MINUTES: 15,
                 CONF_AFTER_BLOCK_MINUTES: 15,
+                CONF_EXCLUDE_PRIVATE_TRAINING: True,
                 CONF_LOCATIONS: ["CrossFit inner loop"],
                 CONF_PROGRAMS: [],
             },

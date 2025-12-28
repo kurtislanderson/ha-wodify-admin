@@ -18,11 +18,13 @@ from .api import ApiAuthError, ApiError, WodifyAPI
 from .const import (
     CONF_AFTER_BLOCK_MINUTES,
     CONF_BEFORE_CLASS_MINUTES,
+    CONF_EXCLUDE_PRIVATE_TRAINING,
     CONF_LOCATIONS,
     CONF_PROGRAMS,
     CONF_UPDATE_INTERVAL,
     DEFAULT_AFTER_BLOCK_MINUTES,
     DEFAULT_BEFORE_CLASS_MINUTES,
+    DEFAULT_EXCLUDE_PRIVATE_TRAINING,
     DEFAULT_UPDATE_INTERVAL,
     DOMAIN,
     MAX_EVENT_MINUTES,
@@ -285,6 +287,9 @@ class WodifyOptionsFlow(config_entries.OptionsFlowWithConfigEntry):
             CONF_BEFORE_CLASS_MINUTES, DEFAULT_BEFORE_CLASS_MINUTES
         )
         after_minutes = current_options.get(CONF_AFTER_BLOCK_MINUTES, DEFAULT_AFTER_BLOCK_MINUTES)
+        exclude_private = current_options.get(
+            CONF_EXCLUDE_PRIVATE_TRAINING, DEFAULT_EXCLUDE_PRIVATE_TRAINING
+        )
         selected_locations = current_options.get(
             CONF_LOCATIONS, self.config_entry.data.get(CONF_LOCATIONS, [])
         )
@@ -296,6 +301,7 @@ class WodifyOptionsFlow(config_entries.OptionsFlowWithConfigEntry):
             update_interval = user_input[CONF_UPDATE_INTERVAL]
             before_minutes = user_input[CONF_BEFORE_CLASS_MINUTES]
             after_minutes = user_input[CONF_AFTER_BLOCK_MINUTES]
+            exclude_private = user_input[CONF_EXCLUDE_PRIVATE_TRAINING]
             selected_locations = user_input[CONF_LOCATIONS]
             selected_programs = user_input[CONF_PROGRAMS]
 
@@ -317,6 +323,7 @@ class WodifyOptionsFlow(config_entries.OptionsFlowWithConfigEntry):
                         CONF_UPDATE_INTERVAL: update_interval,
                         CONF_BEFORE_CLASS_MINUTES: before_minutes,
                         CONF_AFTER_BLOCK_MINUTES: after_minutes,
+                        CONF_EXCLUDE_PRIVATE_TRAINING: exclude_private,
                         CONF_LOCATIONS: list(selected_locations),
                         CONF_PROGRAMS: list(selected_programs),
                     },
@@ -336,6 +343,7 @@ class WodifyOptionsFlow(config_entries.OptionsFlowWithConfigEntry):
                     vol.Coerce(int),
                     vol.Range(min=MIN_EVENT_MINUTES, max=MAX_EVENT_MINUTES),
                 ),
+                vol.Required(CONF_EXCLUDE_PRIVATE_TRAINING, default=exclude_private): bool,
                 vol.Required(CONF_LOCATIONS, default=list(selected_locations)): cv.multi_select(
                     set(self._locations)
                 ),
