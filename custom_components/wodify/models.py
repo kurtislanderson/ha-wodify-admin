@@ -4,34 +4,51 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import datetime
 from typing import Any, Self
+from zoneinfo import ZoneInfo
 
 DEFAULT_COACH_NAME = "Not Available"
 DEFAULT_LOCATION_NAME = "Unknown"
 DEFAULT_PROGRAM_NAME = "Unknown"
 
+# Wodify API returns times in the gym's local timezone
+# Default to US Eastern since most Wodify gyms are in the US
+DEFAULT_TIMEZONE = ZoneInfo("America/New_York")
 
-def _ensure_timezone(dt: datetime) -> datetime:
-    """Ensure a datetime is timezone aware."""
+
+def _ensure_timezone(dt: datetime, tz: ZoneInfo | None = None) -> datetime:
+    """Ensure a datetime is timezone aware.
+
+    The Wodify API returns times in the gym's local timezone without
+    timezone info. We need to attach the correct timezone.
+    """
     if dt.tzinfo is None:
-        return dt.replace(tzinfo=UTC)
+        # API returns local gym time, not UTC
+        return dt.replace(tzinfo=tz or DEFAULT_TIMEZONE)
     return dt
 
 
-def _parse_datetime(value: str) -> datetime:
-    """Parse the datetime string returned by the Wodify API."""
+def _parse_datetime(value: str, tz: ZoneInfo | None = None) -> datetime:
+    """Parse the datetime string returned by the Wodify API.
+
+    IMPORTANT: The Wodify API returns times in the gym's local timezone,
+    even when using a "Z" suffix. The "Z" is misleading - the times are
+    NOT actually UTC. We treat all times as gym local time.
+    """
     if not value:
         raise ValueError("Datetime value is required")
 
-    # Handle the common "Z" suffix used by the API
-    normalised = value.replace("Z", "+00:00")
+    # Strip the misleading "Z" suffix - Wodify sends local times, not UTC
+    cleaned = value.replace("Z", "")
+
     try:
-        parsed = datetime.fromisoformat(normalised)
+        parsed = datetime.fromisoformat(cleaned)
     except ValueError as err:
         raise ValueError(f"Invalid datetime value: {value}") from err
 
-    return _ensure_timezone(parsed)
+    # Attach the gym's local timezone
+    return _ensure_timezone(parsed, tz)
 
 
 @dataclass(slots=True)
