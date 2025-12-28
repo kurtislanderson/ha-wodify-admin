@@ -88,10 +88,10 @@
         "name": "Class Ongoing"
       },
       "class_starting_soon": {
-        "name": "Pre-Class Trigger"
+        "name": "Class Block Starting Soon"
       },
       "block_just_ended": {
-        "name": "Post-Block Trigger"
+        "name": "Class Block Just Ended"
       }
     },
     "calendar": {

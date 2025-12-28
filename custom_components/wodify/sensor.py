@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from datetime import datetime
 
 from homeassistant.components.sensor import SensorEntity
@@ -16,6 +17,26 @@ from .coordinator import WodifyDataUpdateCoordinator
 from .models import WodifyClass
 
 _ICON = "mdi:weight-lifter"
+
+# Pattern to match time at end of class name (e.g., "YOGA: 8:00 AM" or "CrossFit 6:00 PM")
+_TIME_SUFFIX_PATTERN = re.compile(r"[:\s]+\d{1,2}:\d{2}\s*(?:AM|PM|am|pm)?\s*$")
+# Pattern to match time at beginning of class name (e.g., "6:15 AM WOD")
+_TIME_PREFIX_PATTERN = re.compile(r"^\d{1,2}:\d{2}\s*(?:AM|PM|am|pm)?\s+")
+
+
+def _clean_class_name(name: str) -> str:
+    """Remove redundant time from class name if present.
+
+    Wodify API sometimes returns class names with time included:
+    - "YOGA: 8:00 AM" -> "YOGA" (time at end)
+    - "OPEN GYM: 10:30 AM" -> "OPEN GYM" (time at end)
+    - "6:15 AM WOD" -> "WOD" (time at beginning)
+    """
+    # First strip time at end (after colon or space)
+    cleaned = _TIME_SUFFIX_PATTERN.sub("", name).strip()
+    # Then strip time at beginning
+    cleaned = _TIME_PREFIX_PATTERN.sub("", cleaned).strip()
+    return cleaned
 
 
 async def async_setup_entry(
@@ -76,7 +97,8 @@ class WodifyNextClassSensor(CoordinatorEntity[WodifyDataUpdateCoordinator], Sens
 
         start_local = dt_util.as_local(next_class.start_time)
         time_str = start_local.strftime("%I:%M %p").lstrip("0")
-        return f"{next_class.name} at {time_str} with {next_class.coach_name}"
+        clean_name = _clean_class_name(next_class.name)
+        return f"{clean_name} at {time_str} with {next_class.coach_name}"
 
     @staticmethod
     def _format_time(value: datetime) -> str:
@@ -173,7 +195,8 @@ class WodifyCurrentClassSensor(CoordinatorEntity[WodifyDataUpdateCoordinator], S
 
         start_local = dt_util.as_local(current_class.start_time)
         time_str = start_local.strftime("%I:%M %p").lstrip("0")
-        return f"{current_class.name} at {time_str} with {current_class.coach_name}"
+        clean_name = _clean_class_name(current_class.name)
+        return f"{clean_name} at {time_str} with {current_class.coach_name}"
 
     @staticmethod
     def _format_time(value: datetime) -> str:

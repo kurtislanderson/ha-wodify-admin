@@ -170,23 +170,29 @@ You can adjust settings at any time through the integration options:
 
 ### Binary Sensors
 
-#### Class Ongoing Binary Sensor
+#### Class Ongoing
 - **Entity ID**: `binary_sensor.wodify_class_ongoing`
 - **State**: ON during a class, OFF otherwise
 - **Device Class**: `running`
+- **Icon**: `mdi:timer` (on) / `mdi:timer-off` (off)
 - **Attributes** (when ON):
-  - `current_class`: Name of current class
+  - `current_class`: Name of current class (cleaned)
   - `coach`: Instructor name
   - `location`: Gym location
+  - `program`: Program name
   - `minutes_remaining`: Minutes until class ends
+  - `minutes_elapsed`: Minutes since class started
+  - `duration_minutes`: Total class duration
   - `start_time`: When the class started
   - `end_time`: When the class ends
+  - `capacity`: Current/max attendees (e.g., "12/20")
+  - `attendees_signed_in`: Number signed in
 
-#### Pre-Class Trigger
+#### Class Block Starting Soon
 - **Entity ID**: `binary_sensor.wodify_class_starting_soon`
 - **State**: ON when a class starts within the configured trigger window, OFF otherwise
 - **Device Class**: `occupancy`
-- **Icon**: `mdi:television` (on) / `mdi:television-off` (off)
+- **Icon**: `mdi:timer` (on) / `mdi:timer-off` (off)
 - **Use Case**: Trigger automations to prepare for class (turn on TVs, lights, HVAC, etc.)
 - **Attributes**:
   - `trigger_window_minutes`: Configured minutes before class to trigger (5-60)
@@ -196,11 +202,11 @@ You can adjust settings at any time through the integration options:
   - `minutes_until_class`: Minutes until class starts
   - `class_start_time`: ISO formatted start time
 
-#### Post-Block Trigger
+#### Class Block Just Ended
 - **Entity ID**: `binary_sensor.wodify_block_just_ended`
 - **State**: ON for the configured trigger window after a class block ends, OFF otherwise
 - **Device Class**: `occupancy`
-- **Icon**: `mdi:television-off` (on) / `mdi:television` (off)
+- **Icon**: `mdi:timer` (on) / `mdi:timer-off` (off)
 - **Use Case**: Trigger automations after classes end (turn off TVs, lights, equipment, etc.)
 - **Note**: A "block" is a group of back-to-back classes with gaps less than 30 minutes between them
 - **Attributes**:
@@ -259,8 +265,8 @@ Update pre-class and post-block trigger timing.
 ## Automations
 
 The integration provides two binary sensors specifically designed for triggering automations:
-- **Pre-Class Trigger**: Turns ON within X minutes before a class starts
-- **Post-Block Trigger**: Turns ON within X minutes after a class block ends
+- **Class Block Starting Soon**: Turns ON within X minutes before a class starts
+- **Class Block Just Ended**: Turns ON within X minutes after a class block ends
 
 ### Example: Turn On TVs & Lights Before Class
 ```yaml

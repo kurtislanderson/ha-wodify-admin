@@ -84,6 +84,21 @@ class WodifyClassOngoingBinarySensor(
     def _format_time(value: datetime) -> str:
         return value.strftime("%Y-%m-%dT%H:%M:%S")
 
+    @staticmethod
+    def _clean_class_name(name: str) -> str:
+        """Remove redundant time from class name.
+
+        Handles: "YOGA: 8:00 AM" -> "YOGA", "6:15 AM WOD" -> "WOD"
+        """
+        import re
+        # Time at end (e.g., "YOGA: 8:00 AM")
+        suffix_pattern = re.compile(r"[:\s]+\d{1,2}:\d{2}\s*(?:AM|PM|am|pm)?\s*$")
+        # Time at beginning (e.g., "6:15 AM WOD")
+        prefix_pattern = re.compile(r"^\d{1,2}:\d{2}\s*(?:AM|PM|am|pm)?\s+")
+        cleaned = suffix_pattern.sub("", name).strip()
+        cleaned = prefix_pattern.sub("", cleaned).strip()
+        return cleaned
+
     @property
     def extra_state_attributes(self) -> dict[str, object]:
         attributes: dict[str, object] = {}
@@ -93,15 +108,27 @@ class WodifyClassOngoingBinarySensor(
 
         now = dt_util.now()
         remaining = int((current.end_time - now).total_seconds() // 60)
+        elapsed = int((now - current.start_time).total_seconds() // 60)
+
+        capacity = (
+            f"{current.current_attendees}/{current.max_attendees}"
+            if current.max_attendees
+            else str(current.current_attendees)
+        )
 
         attributes.update(
             {
-                "current_class": current.name,
+                "current_class": self._clean_class_name(current.name),
                 "coach": current.coach_name,
                 "location": current.location_name,
+                "program": current.program_name,
                 "minutes_remaining": max(0, remaining),
+                "minutes_elapsed": max(0, elapsed),
+                "duration_minutes": current.duration_minutes,
                 "start_time": self._format_time(current.start_time),
                 "end_time": self._format_time(current.end_time),
+                "capacity": capacity,
+                "attendees_signed_in": current.attendees_signed_in,
             }
         )
         return attributes
@@ -131,7 +158,7 @@ class WodifyClassStartingSoonBinarySensor(
 
     _attr_should_poll = False
     _attr_device_class = BinarySensorDeviceClass.OCCUPANCY
-    _attr_name = "Pre-Class Trigger"
+    _attr_name = "Class Block Starting Soon"
 
     def __init__(self, coordinator: WodifyDataUpdateCoordinator, config_entry: ConfigEntry) -> None:
         super().__init__(coordinator)
@@ -209,7 +236,7 @@ class WodifyClassStartingSoonBinarySensor(
 
     @property
     def icon(self) -> str:
-        return "mdi:television" if self.is_on else "mdi:television-off"
+        return "mdi:timer" if self.is_on else "mdi:timer-off"
 
     @property
     def device_info(self) -> dict[str, object]:
@@ -233,7 +260,7 @@ class WodifyBlockJustEndedBinarySensor(
 
     _attr_should_poll = False
     _attr_device_class = BinarySensorDeviceClass.OCCUPANCY
-    _attr_name = "Post-Block Trigger"
+    _attr_name = "Class Block Just Ended"
 
     def __init__(self, coordinator: WodifyDataUpdateCoordinator, config_entry: ConfigEntry) -> None:
         super().__init__(coordinator)
@@ -320,7 +347,7 @@ class WodifyBlockJustEndedBinarySensor(
 
     @property
     def icon(self) -> str:
-        return "mdi:television-off" if self.is_on else "mdi:television"
+        return "mdi:timer" if self.is_on else "mdi:timer-off"
 
     @property
     def device_info(self) -> dict[str, object]:
