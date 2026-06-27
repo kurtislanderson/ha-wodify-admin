@@ -463,3 +463,86 @@ class TestCoordinator:
 
         # Should include all classes
         assert len(coordinator.data) == 2
+
+
+class TestCoachEnrichment:
+    """Tests for _enrich_with_coaches (search omits coaches; backfill via GET)."""
+
+    def _coordinator(self, hass, mock_api):
+        return WodifyDataUpdateCoordinator(hass, mock_api, [], [], 5)
+
+    def _class(self, cid, start_offset_h, end_offset_h, coach="Not Available"):
+        from homeassistant.util import dt as dt_util
+
+        now = dt_util.now()
+        return WodifyClass(
+            id=cid,
+            name=f"Class {cid}",
+            start_time=now + timedelta(hours=start_offset_h),
+            end_time=now + timedelta(hours=end_offset_h),
+            coach_name=coach,
+        )
+
+    async def test_in_progress_class_gets_coach(self, hass, mock_api):
+        """A class that already started (start_time <= now) must still be enriched."""
+        coordinator = self._coordinator(hass, mock_api)
+        # Started 30 min ago, ends in 30 min — would be skipped by the old start_time>now filter
+        in_progress = self._class("1", -0.5, 0.5)
+        mock_api.get_class = AsyncMock(
+            return_value={
+                "id": "1",
+                "name": "Class 1",
+                "start_date_time": in_progress.start_time.strftime("%Y-%m-%dT%H:%M:%S"),
+                "end_date_time": in_progress.end_time.strftime("%Y-%m-%dT%H:%M:%S"),
+                "coaches": [{"coach": "Coach Z"}],
+            }
+        )
+
+        result = await coordinator._enrich_with_coaches([in_progress])
+
+        assert result[0].coach_name == "Coach Z"
+        assert coordinator._coach_cache["1"] == "Coach Z"
+
+    async def test_cache_survives_search_wipe(self, hass, mock_api):
+        """Cached coach is restored when a later refresh fails to re-fetch it."""
+        coordinator = self._coordinator(hass, mock_api)
+        coordinator._coach_cache["1"] = "Coach Z"
+        wiped = self._class("1", -0.5, 0.5)  # search returned "Not Available"
+        mock_api.get_class = AsyncMock(side_effect=ApiError("boom"))
+
+        result = await coordinator._enrich_with_coaches([wiped])
+
+        # GET failed, but cache restored the coach
+        assert result[0].coach_name == "Coach Z"
+
+    async def test_coach_removed_clears_cache(self, hass, mock_api):
+        """If Wodify drops the coach, the stale cache entry is removed."""
+        coordinator = self._coordinator(hass, mock_api)
+        coordinator._coach_cache["1"] = "Coach Z"
+        cls = self._class("1", -0.5, 0.5)
+        mock_api.get_class = AsyncMock(
+            return_value={
+                "id": "1",
+                "name": "Class 1",
+                "start_date_time": cls.start_time.strftime("%Y-%m-%dT%H:%M:%S"),
+                "end_date_time": cls.end_time.strftime("%Y-%m-%dT%H:%M:%S"),
+                "coaches": [],
+            }
+        )
+
+        result = await coordinator._enrich_with_coaches([cls])
+
+        assert result[0].coach_name == "Not Available"
+        assert "1" not in coordinator._coach_cache
+
+    async def test_cache_pruned_to_live_ids(self, hass, mock_api):
+        """Cache entries for classes no longer in the window are dropped."""
+        coordinator = self._coordinator(hass, mock_api)
+        coordinator._coach_cache = {"old": "Coach Old", "1": "Coach Z"}
+        cls = self._class("1", -0.5, 0.5)
+        mock_api.get_class = AsyncMock(side_effect=ApiError("skip"))
+
+        await coordinator._enrich_with_coaches([cls])
+
+        assert "old" not in coordinator._coach_cache
+        assert "1" in coordinator._coach_cache

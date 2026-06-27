@@ -33,7 +33,7 @@ A Home Assistant integration for Wodify class schedules. Use your Wodify schedul
 
 ### Optimized Design
 - **Efficient API usage** - Fetches 7 days of upcoming class data
-- **Coach information** - Automatically fetches coach names for the next 10 upcoming classes
+- **Coach information** - The class search API omits coaches, so coach names are backfilled via per-class lookups. Today's classes (including in-progress ones) are refreshed every cycle to catch same-day coach changes; coaches are cached per class so they persist across refreshes and after a class has started
 - **Multiple coach support** - Displays all assigned coaches (e.g., "Nick Alexander & Sarah Smith")
 - **Data caching** - Retains class data for 48 hours when API is unavailable
 - **Active program filtering** - Only shows active programs during setup

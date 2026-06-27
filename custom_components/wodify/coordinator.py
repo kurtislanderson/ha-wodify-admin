@@ -14,7 +14,7 @@ from homeassistant.util import dt as dt_util
 
 from .api import ApiAuthError, ApiError, WodifyAPI
 from .const import BLOCK_GAP_THRESHOLD, CACHE_MAX_AGE_HOURS, DOMAIN
-from .models import WodifyClass
+from .models import DEFAULT_COACH_NAME, WodifyClass
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -124,6 +124,11 @@ class WodifyDataUpdateCoordinator(DataUpdateCoordinator[list[WodifyClass]]):
         self.event_manager: Any | None = None
         self.last_data: dict[str, WodifyClass] = {}
 
+        # Coach names resolved per class id (search endpoint omits coaches, so
+        # we backfill from GET /classes/{id} and remember the result across
+        # refreshes). Survives the search wipe and covers in-progress classes.
+        self._coach_cache: dict[str, str] = {}
+
         # Cache for API status tracking
         self._cached_data: list[WodifyClass] = []
         self._api_connected: bool = True
@@ -158,32 +163,67 @@ class WodifyDataUpdateCoordinator(DataUpdateCoordinator[list[WodifyClass]]):
         return self._cached_data
 
     async def _enrich_with_coaches(self, classes: list[WodifyClass]) -> list[WodifyClass]:
-        """Fetch coach info for upcoming classes.
+        """Backfill coach names that the /classes/search endpoint omits.
 
-        Only enriches the next MAX_COACH_ENRICHMENT classes to limit API calls.
+        Search never returns coaches, so every refresh wipes them back to
+        DEFAULT_COACH_NAME. We resolve coaches via GET /classes/{id} and cache
+        them per class id so the value survives refreshes (including after a
+        class has already started). Today's classes are re-fetched every refresh
+        because coaches can change same-day; future classes are fetched once
+        (capped) to populate the next-day preview, then served from cache.
         """
-        now = dt_util.now()
-        upcoming = [c for c in classes if c.start_time > now and not c.is_cancelled]
-        upcoming.sort(key=lambda c: c.start_time)
+        index_by_id = {c.id: i for i, c in enumerate(classes)}
 
-        # Only enrich the next N classes to limit API calls
-        to_enrich = upcoming[: self.MAX_COACH_ENRICHMENT]
+        # 1. Restore previously-resolved coaches wiped by the search response.
+        for cls in classes:
+            if cls.coach_name == DEFAULT_COACH_NAME and cls.id in self._coach_cache:
+                cls.coach_name = self._coach_cache[cls.id]
+
+        # 2. Decide what to (re)fetch. The search window starts at midnight
+        #    today, so every class is today or later.
+        today = dt_util.now().date()
+        today_classes = [
+            c for c in classes if not c.is_cancelled and c.start_time.date() == today
+        ]
+        future_uncached = sorted(
+            (
+                c
+                for c in classes
+                if not c.is_cancelled
+                and c.start_time.date() > today
+                and c.id not in self._coach_cache
+            ),
+            key=lambda c: c.start_time,
+        )
+        to_enrich = today_classes + future_uncached[: self.MAX_COACH_ENRICHMENT]
 
         enriched_ids: set[str] = set()
         for cls in to_enrich:
             try:
                 full_data = await self.api.get_class(cls.id)
-                if full_data and "coaches" in full_data:
-                    # Re-parse the class with full data including coaches
-                    enriched = WodifyClass.from_api_response(full_data)
-                    # Replace in the original list
-                    for i, original in enumerate(classes):
-                        if original.id == cls.id:
-                            classes[i] = enriched
-                            enriched_ids.add(cls.id)
-                            break
-            except Exception as err:
+            except Exception as err:  # noqa: BLE001 - never let one class break the refresh
                 _LOGGER.debug("Failed to enrich class %s with coach: %s", cls.id, err)
+                continue
+            if not full_data or "coaches" not in full_data:
+                continue
+            # Parse only to extract the coach name; keep the search object (it
+            # already carries fresh attendee data) and mutate coach_name in place.
+            coach_name = WodifyClass.from_api_response(full_data).coach_name
+            if coach_name != DEFAULT_COACH_NAME:
+                self._coach_cache[cls.id] = coach_name
+            else:
+                # Coach removed in Wodify: drop any stale cached value.
+                self._coach_cache.pop(cls.id, None)
+            idx = index_by_id.get(cls.id)
+            if idx is not None:
+                classes[idx].coach_name = coach_name
+                enriched_ids.add(cls.id)
+
+        # Prune cache entries for classes that have rolled out of the window.
+        live_ids = {c.id for c in classes}
+        self._coach_cache = {
+            cid: name for cid, name in self._coach_cache.items() if cid in live_ids
+        }
 
         if enriched_ids:
             _LOGGER.debug("Enriched %d classes with coach info", len(enriched_ids))
