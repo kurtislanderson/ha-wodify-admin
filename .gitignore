@@ -31,3 +31,6 @@ build/
 .claude/
 .claudeignore
 CLAUDE.md
+
+# CodeGraph index
+.codegraph/

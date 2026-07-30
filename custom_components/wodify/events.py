@@ -7,7 +7,7 @@ import logging
 from collections.abc import Callable
 from datetime import timedelta
 
-from homeassistant.core import HassJob, HomeAssistant
+from homeassistant.core import HassJob, HassJobType, HomeAssistant, callback
 from homeassistant.helpers.event import async_call_later as hass_async_call_later
 from homeassistant.util import dt as dt_util
 
@@ -51,9 +51,13 @@ def _ensure_async_call_later(hass: HomeAssistant) -> None:
 
     def _async_call_later(
         delay: float | timedelta,
-        callback: Callable[..., None],
+        action: Callable[..., None],
     ):
-        job = HassJob(lambda when: callback(when), cancel_on_shutdown=True)
+        # job_type is explicit on purpose: HassJob infers HassJobType.Executor
+        # for any target that is not @callback / a coroutine function, which
+        # runs it in a worker thread, where async_write_ha_state() raises HA's
+        # thread-safety error and every exact-time sensor update is dropped.
+        job = HassJob(action, cancel_on_shutdown=True, job_type=HassJobType.Callback)
         cancel = hass_async_call_later(hass, delay, job)
         return _CancelHandle(cancel)
 
@@ -75,6 +79,7 @@ class _ScheduledEvent:
         # Ensure we always schedule through async_call_later for HA friendly timing
         self._handle = hass.async_call_later(max(delay, 0), self._run)
 
+    @callback
     def _run(self, *_: object) -> None:
         if self._cancelled:
             return
