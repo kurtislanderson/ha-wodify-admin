@@ -8,8 +8,8 @@ from homeassistant.data_entry_flow import FlowResultType
 
 from custom_components.wodify.const import (
     CONF_AFTER_BLOCK_MINUTES,
-    CONF_BLOCK_GAP_MINUTES,
     CONF_BEFORE_CLASS_MINUTES,
+    CONF_BLOCK_GAP_MINUTES,
     CONF_EXCLUDE_PRIVATE_TRAINING,
     CONF_LOCATIONS,
     CONF_PROGRAMS,
