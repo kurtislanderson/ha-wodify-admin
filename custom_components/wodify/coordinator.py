@@ -39,12 +39,24 @@ def _get_value(item: Any, getter: Callable[[Any], Any], *fallbacks: str) -> Any:
     return getter(item)
 
 
-def detect_class_blocks(classes: Iterable[Any]) -> list[list[Any]]:
+def detect_class_blocks(
+    classes: Iterable[Any], gap_threshold: int | None = None
+) -> list[list[Any]]:
     """Group back-to-back classes into contiguous blocks.
+
+    ``gap_threshold`` is the number of minutes between two classes that still
+    counts as the same block. Pass the configured value from the config entry;
+    it falls back to :data:`BLOCK_GAP_THRESHOLD` when omitted.
 
     The helper accepts either dictionaries (used by the light-weight coordinator
     tests) or :class:`WodifyClass` instances from the main coordinator.
     """
+
+    try:
+        threshold = BLOCK_GAP_THRESHOLD if gap_threshold is None else int(gap_threshold)
+    except (TypeError, ValueError):
+        # A malformed option must not break block detection entirely.
+        threshold = BLOCK_GAP_THRESHOLD
 
     # Normalise and filter cancelled classes up-front
     active_items: list[Any] = []
@@ -86,7 +98,7 @@ def detect_class_blocks(classes: Iterable[Any]) -> list[list[Any]]:
         # block by more than the configured threshold, either because there is a
         # large gap or the classes overlap by a significant amount (e.g. classes
         # running in parallel in different locations).
-        if gap_minutes > BLOCK_GAP_THRESHOLD or gap_minutes < -BLOCK_GAP_THRESHOLD:
+        if gap_minutes > threshold or gap_minutes < -threshold:
             blocks.append(current_block)
             current_block = [current]
             block_end = current_end
@@ -114,6 +126,7 @@ class WodifyDataUpdateCoordinator(DataUpdateCoordinator[list[WodifyClass]]):
         programs: list[str],
         update_interval: int,
         exclude_private_training: bool = True,
+        block_gap_minutes: int = BLOCK_GAP_THRESHOLD,
     ) -> None:
         """Initialise the coordinator."""
 
@@ -121,6 +134,7 @@ class WodifyDataUpdateCoordinator(DataUpdateCoordinator[list[WodifyClass]]):
         self.locations = locations
         self.programs = programs
         self.exclude_private_training = exclude_private_training
+        self.block_gap_minutes = int(block_gap_minutes)
         self.event_manager: Any | None = None
         self.last_data: dict[str, WodifyClass] = {}
 

@@ -28,7 +28,8 @@
         "data": {
           "update_interval": "Update interval (minutes)",
           "before_class_minutes": "Pre-class trigger (minutes before class)",
-          "after_block_minutes": "Post-block trigger (minutes after block ends)"
+          "after_block_minutes": "Post-block trigger (minutes after block ends)",
+          "block_gap_minutes": "Block gap (classes closer than this count as one block)"
         }
       },
       "reauth": {
@@ -47,6 +48,7 @@
       "invalid_update_interval": "Update interval must be between 1 and 60 minutes.",
       "invalid_before_minutes": "Before class minutes must be between 5 and 60.",
       "invalid_after_minutes": "After block minutes must be between 5 and 60.",
+      "invalid_block_gap": "Block gap must be between 5 and 60.",
       "unknown": "Unexpected error occurred. Please check the logs for details."
     },
     "abort": {
@@ -63,6 +65,7 @@
           "update_interval": "Update interval (minutes)",
           "before_class_minutes": "Pre-class trigger (minutes before class)",
           "after_block_minutes": "Post-block trigger (minutes after block ends)",
+          "block_gap_minutes": "Block gap (classes closer than this count as one block)",
           "exclude_private_training": "Exclude Private Training",
           "locations": "Locations",
           "programs": "Programs"
@@ -74,7 +77,8 @@
       "no_programs": "Please select at least one program.",
       "invalid_update_interval": "Update interval must be between 1 and 60 minutes.",
       "invalid_before_minutes": "Before class minutes must be between 5 and 60.",
-      "invalid_after_minutes": "After block minutes must be between 5 and 60."
+      "invalid_after_minutes": "After block minutes must be between 5 and 60.",
+      "invalid_block_gap": "Block gap must be between 5 and 60."
     }
   },
   "entity": {

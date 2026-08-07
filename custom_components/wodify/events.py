@@ -143,7 +143,7 @@ class WodifyEventManager:
         now = dt_util.now()
 
         # Schedule block completion events first
-        blocks = detect_class_blocks(classes)
+        blocks = detect_class_blocks(classes, self.coordinator.block_gap_minutes)
         for block in blocks:
             if not block:
                 continue
@@ -290,7 +290,7 @@ class WodifyEventManager:
         if not classes:
             return
 
-        blocks = detect_class_blocks(classes)
+        blocks = detect_class_blocks(classes, self.coordinator.block_gap_minutes)
 
         # Find sensors by type
         class_starting_sensor = None

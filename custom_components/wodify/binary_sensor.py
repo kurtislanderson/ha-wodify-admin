@@ -275,7 +275,9 @@ class WodifyBlockStartingSoonBinarySensor(
         if not self.coordinator.data:
             return None
         now = dt_util.now()
-        blocks = detect_class_blocks(self.coordinator.data)
+        blocks = detect_class_blocks(
+            self.coordinator.data, self.coordinator.block_gap_minutes
+        )
 
         for block in blocks:
             if not block:
@@ -291,7 +293,9 @@ class WodifyBlockStartingSoonBinarySensor(
         if not self.coordinator.data:
             return False
         now = dt_util.now()
-        blocks = detect_class_blocks(self.coordinator.data)
+        blocks = detect_class_blocks(
+            self.coordinator.data, self.coordinator.block_gap_minutes
+        )
 
         for block in blocks:
             if not block:
@@ -409,7 +413,9 @@ class WodifyBlockJustEndedBinarySensor(
         if not self.coordinator.data:
             return None
         now = dt_util.now()
-        blocks = detect_class_blocks(self.coordinator.data)
+        blocks = detect_class_blocks(
+            self.coordinator.data, self.coordinator.block_gap_minutes
+        )
 
         # Find blocks that ended recently (within after_minutes)
         for block in reversed(blocks):

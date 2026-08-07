@@ -23,12 +23,14 @@ from .api import ApiAuthError, ApiError, WodifyAPI
 from .const import (
     CONF_AFTER_BLOCK_MINUTES,
     CONF_BEFORE_CLASS_MINUTES,
+    CONF_BLOCK_GAP_MINUTES,
     CONF_EXCLUDE_PRIVATE_TRAINING,
     CONF_LOCATIONS,
     CONF_PROGRAMS,
     CONF_UPDATE_INTERVAL,
     DEFAULT_AFTER_BLOCK_MINUTES,
     DEFAULT_BEFORE_CLASS_MINUTES,
+    DEFAULT_BLOCK_GAP_MINUTES,
     DEFAULT_EXCLUDE_PRIVATE_TRAINING,
     DEFAULT_UPDATE_INTERVAL,
     DOMAIN,
@@ -163,6 +165,9 @@ class WodifyConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             update_interval = int(user_input[CONF_UPDATE_INTERVAL])
             before_minutes = int(user_input[CONF_BEFORE_CLASS_MINUTES])
             after_minutes = int(user_input[CONF_AFTER_BLOCK_MINUTES])
+            block_gap = int(
+                user_input.get(CONF_BLOCK_GAP_MINUTES, DEFAULT_BLOCK_GAP_MINUTES)
+            )
 
             if not (MIN_UPDATE_INTERVAL <= update_interval <= MAX_UPDATE_INTERVAL):
                 errors[CONF_UPDATE_INTERVAL] = "invalid_update_interval"
@@ -170,6 +175,8 @@ class WodifyConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 errors[CONF_BEFORE_CLASS_MINUTES] = "invalid_before_minutes"
             if not (MIN_EVENT_MINUTES <= after_minutes <= MAX_EVENT_MINUTES):
                 errors[CONF_AFTER_BLOCK_MINUTES] = "invalid_after_minutes"
+            if not (MIN_EVENT_MINUTES <= block_gap <= MAX_EVENT_MINUTES):
+                errors[CONF_BLOCK_GAP_MINUTES] = "invalid_block_gap"
 
             if not errors:
                 title_location = self._selected_locations[0]
@@ -184,6 +191,7 @@ class WodifyConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         CONF_UPDATE_INTERVAL: update_interval,
                         CONF_BEFORE_CLASS_MINUTES: before_minutes,
                         CONF_AFTER_BLOCK_MINUTES: after_minutes,
+                        CONF_BLOCK_GAP_MINUTES: block_gap,
                     },
                 )
 
@@ -200,6 +208,17 @@ class WodifyConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 ),
                 vol.Required(
                     CONF_BEFORE_CLASS_MINUTES, default=DEFAULT_BEFORE_CLASS_MINUTES
+                ): NumberSelector(
+                    NumberSelectorConfig(
+                        min=MIN_EVENT_MINUTES,
+                        max=MAX_EVENT_MINUTES,
+                        step=5,
+                        unit_of_measurement="min",
+                        mode=NumberSelectorMode.SLIDER,
+                    )
+                ),
+                vol.Required(
+                    CONF_BLOCK_GAP_MINUTES, default=DEFAULT_BLOCK_GAP_MINUTES
                 ): NumberSelector(
                     NumberSelectorConfig(
                         min=MIN_EVENT_MINUTES,
@@ -307,6 +326,7 @@ class WodifyOptionsFlow(config_entries.OptionsFlowWithConfigEntry):
             CONF_BEFORE_CLASS_MINUTES, DEFAULT_BEFORE_CLASS_MINUTES
         )
         after_minutes = current_options.get(CONF_AFTER_BLOCK_MINUTES, DEFAULT_AFTER_BLOCK_MINUTES)
+        block_gap = current_options.get(CONF_BLOCK_GAP_MINUTES, DEFAULT_BLOCK_GAP_MINUTES)
         exclude_private = current_options.get(
             CONF_EXCLUDE_PRIVATE_TRAINING, DEFAULT_EXCLUDE_PRIVATE_TRAINING
         )
@@ -321,6 +341,9 @@ class WodifyOptionsFlow(config_entries.OptionsFlowWithConfigEntry):
             update_interval = int(user_input[CONF_UPDATE_INTERVAL])
             before_minutes = int(user_input[CONF_BEFORE_CLASS_MINUTES])
             after_minutes = int(user_input[CONF_AFTER_BLOCK_MINUTES])
+            block_gap = int(
+                user_input.get(CONF_BLOCK_GAP_MINUTES, DEFAULT_BLOCK_GAP_MINUTES)
+            )
             exclude_private = user_input[CONF_EXCLUDE_PRIVATE_TRAINING]
             selected_locations = user_input[CONF_LOCATIONS]
             selected_programs = user_input[CONF_PROGRAMS]
@@ -331,6 +354,8 @@ class WodifyOptionsFlow(config_entries.OptionsFlowWithConfigEntry):
                 errors[CONF_BEFORE_CLASS_MINUTES] = "invalid_before_minutes"
             if not (MIN_EVENT_MINUTES <= after_minutes <= MAX_EVENT_MINUTES):
                 errors[CONF_AFTER_BLOCK_MINUTES] = "invalid_after_minutes"
+            if not (MIN_EVENT_MINUTES <= block_gap <= MAX_EVENT_MINUTES):
+                errors[CONF_BLOCK_GAP_MINUTES] = "invalid_block_gap"
             if not selected_locations:
                 errors[CONF_LOCATIONS] = "no_locations"
             if not selected_programs:
@@ -343,6 +368,7 @@ class WodifyOptionsFlow(config_entries.OptionsFlowWithConfigEntry):
                         CONF_UPDATE_INTERVAL: update_interval,
                         CONF_BEFORE_CLASS_MINUTES: before_minutes,
                         CONF_AFTER_BLOCK_MINUTES: after_minutes,
+                        CONF_BLOCK_GAP_MINUTES: block_gap,
                         CONF_EXCLUDE_PRIVATE_TRAINING: exclude_private,
                         CONF_LOCATIONS: list(selected_locations),
                         CONF_PROGRAMS: list(selected_programs),

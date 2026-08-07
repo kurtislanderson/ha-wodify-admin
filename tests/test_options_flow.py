@@ -8,11 +8,13 @@ from homeassistant.data_entry_flow import FlowResultType
 
 from custom_components.wodify.const import (
     CONF_AFTER_BLOCK_MINUTES,
+    CONF_BLOCK_GAP_MINUTES,
     CONF_BEFORE_CLASS_MINUTES,
     CONF_EXCLUDE_PRIVATE_TRAINING,
     CONF_LOCATIONS,
     CONF_PROGRAMS,
     CONF_UPDATE_INTERVAL,
+    DEFAULT_BLOCK_GAP_MINUTES,
 )
 from custom_components.wodify.models import WodifyClass
 
@@ -203,11 +205,14 @@ class TestOptionsFlow:
         )
 
         assert result["type"] == FlowResultType.CREATE_ENTRY
-        # Options should remain the same
+        # Options should remain the same. block_gap_minutes is absent from the
+        # submitted input above, so it lands on its default rather than being
+        # dropped - an entry saved before the option existed keeps working.
         assert result["data"] == {
             CONF_UPDATE_INTERVAL: 5,
             CONF_BEFORE_CLASS_MINUTES: 15,
             CONF_AFTER_BLOCK_MINUTES: 15,
+            CONF_BLOCK_GAP_MINUTES: DEFAULT_BLOCK_GAP_MINUTES,
             CONF_EXCLUDE_PRIVATE_TRAINING: True,
             CONF_LOCATIONS: ["CrossFit inner loop"],
             CONF_PROGRAMS: ["DAILY WOD"],

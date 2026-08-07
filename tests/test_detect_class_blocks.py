@@ -63,3 +63,40 @@ def test_blocks_sorted_and_cancelled_removed():
 
     assert len(blocks) == 1
     assert [cls["id"] for cls in blocks[0]] == ["first", "later"]
+
+
+def _cls(start_min: int, end_min: int) -> dict:
+    """Minimal class dict anchored to a fixed day."""
+    base = datetime(2026, 8, 7, 6, 0)
+    return {
+        "start": base + timedelta(minutes=start_min),
+        "end": base + timedelta(minutes=end_min),
+        "is_cancelled": False,
+    }
+
+
+def test_gap_threshold_defaults_to_thirty_minutes():
+    """A 30-minute gap merges, 31 splits — the documented boundary."""
+    merged = detect_class_blocks([_cls(0, 60), _cls(90, 150)])
+    assert len(merged) == 1
+
+    split = detect_class_blocks([_cls(0, 60), _cls(91, 151)])
+    assert len(split) == 2
+
+
+def test_gap_threshold_is_configurable():
+    """A gap that splits at the default must merge under a wider threshold."""
+    classes = [_cls(0, 60), _cls(95, 155)]  # 35-minute gap
+
+    assert len(detect_class_blocks(classes)) == 2
+    assert len(detect_class_blocks(classes, 45)) == 1
+    assert len(detect_class_blocks(classes, gap_threshold=45)) == 1
+
+
+def test_gap_threshold_applies_to_overlaps_too():
+    """The threshold is symmetric: large overlaps split as well."""
+    # Sorted by start, so the gap is measured from the first class's end
+    # (+60) to the second's start (+10) = -50 minutes of overlap.
+    overlapping = [_cls(0, 60), _cls(10, 200)]
+    assert len(detect_class_blocks(overlapping, 30)) == 2
+    assert len(detect_class_blocks(overlapping, 60)) == 1
