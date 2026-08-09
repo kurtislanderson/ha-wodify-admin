@@ -51,8 +51,10 @@ jobs:
         with:
           python-version: "3.11"
 
+      # Pinned: ruff widens its default rule set between minor releases
+      # (0.16 enabled I/RUF/BLE by default and broke CI).
       - name: Install ruff
-        run: pip install ruff
+        run: pip install ruff==0.16.2
 
       - name: Run ruff
         run: ruff check custom_components/wodify tests/
@@ -69,7 +71,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install mypy
+          pip install mypy==2.3.0
           pip install -r requirements_test.txt
 
       - name: Run mypy
