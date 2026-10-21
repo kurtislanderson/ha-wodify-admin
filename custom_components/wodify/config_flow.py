@@ -9,7 +9,7 @@ import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.config_entries import ConfigEntry, ConfigFlowResult
 from homeassistant.const import CONF_API_KEY
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.selector import (
@@ -81,10 +81,10 @@ class WodifyConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_user(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         errors: dict[str, str] = {}
 
-        if user_input is not None:
-            if self._async_current_entries():
-                return self.async_abort(reason="already_configured")
+        if self._async_current_entries():
+            return self.async_abort(reason="already_configured")
 
+        if user_input is not None:
             api_key = user_input[CONF_API_KEY]
             api = await self._create_api(self.hass, api_key)
 
@@ -248,12 +248,15 @@ class WodifyConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
-    async def async_step_reauth(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
-        errors: dict[str, str] = {}
-        entry_id = self.context.get("entry_id")
-        entry = self.hass.config_entries.async_get_entry(entry_id) if entry_id else None
+    async def async_step_reauth(self, _entry_data: Mapping[str, Any]) -> ConfigFlowResult:
+        return await self.async_step_reauth_confirm()
 
-        if user_input is not None and entry is not None:
+    async def async_step_reauth_confirm(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        errors: dict[str, str] = {}
+
+        if user_input is not None:
             new_key = user_input[CONF_API_KEY]
             api = await self._create_api(self.hass, new_key)
             try:
@@ -263,34 +266,28 @@ class WodifyConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             except ApiError:
                 errors["base"] = "cannot_connect"
             else:
-                self.hass.config_entries.async_update_entry(
-                    entry,
-                    data={**entry.data, CONF_API_KEY: new_key},
+                return self.async_update_reload_and_abort(
+                    self._get_reauth_entry(), data_updates={CONF_API_KEY: new_key}
                 )
-                return self.async_abort(reason="reauth_successful")
 
         return self.async_show_form(
-            step_id="reauth",
+            step_id="reauth_confirm",
             data_schema=vol.Schema({vol.Required(CONF_API_KEY): str}),
             errors=errors,
         )
 
     @staticmethod
-    def async_get_options_flow(config_entry: ConfigEntry) -> config_entries.OptionsFlow:
-        return WodifyOptionsFlow(config_entry)
+    @callback
+    def async_get_options_flow(_config_entry: ConfigEntry) -> config_entries.OptionsFlow:
+        return WodifyOptionsFlow()
 
 
-class WodifyOptionsFlow(config_entries.OptionsFlowWithConfigEntry):
+class WodifyOptionsFlow(config_entries.OptionsFlow):
     """Handle options for an existing config entry."""
 
-    def __init__(self, config_entry: ConfigEntry) -> None:
-        super().__init__(config_entry)
-        self._locations: list[str] = list(
-            config_entry.options.get(CONF_LOCATIONS, config_entry.data.get(CONF_LOCATIONS, []))
-        )
-        self._programs: list[str] = list(
-            config_entry.options.get(CONF_PROGRAMS, config_entry.data.get(CONF_PROGRAMS, []))
-        )
+    def __init__(self) -> None:
+        self._locations: list[str] = []
+        self._programs: list[str] = []
 
     async def _load_dynamic_options(self, hass: HomeAssistant) -> None:
         runtime = getattr(self.config_entry, "runtime_data", None)
@@ -313,6 +310,9 @@ class WodifyOptionsFlow(config_entries.OptionsFlowWithConfigEntry):
             self._locations = extracted_locations
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        entry = self.config_entry
+        self._locations = list(entry.options.get(CONF_LOCATIONS, entry.data.get(CONF_LOCATIONS, [])))
+        self._programs = list(entry.options.get(CONF_PROGRAMS, entry.data.get(CONF_PROGRAMS, [])))
         await self._load_dynamic_options(self.hass)
 
         errors: dict[str, str] = {}

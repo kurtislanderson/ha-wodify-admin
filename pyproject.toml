@@ -4,13 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ha-wodify-admin"
-version = "2.0.0"
+version = "0.2.3"
 description = "Wodify Home Assistant Integration"
 readme = "README.md"
 license = {text = "MIT"}
-requires-python = ">=3.12"
+requires-python = ">=3.13"
 authors = [
-    {name = "Kurtis Landerson", email = "kurtislanderson@example.com"}
+    {name = "Kurt Anderson", email = "kurtislanderson@gmail.com"}
 ]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -18,8 +18,7 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.12",
-    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
 ]
 
 [project.urls]
@@ -35,7 +34,7 @@ filterwarnings = [
 ]
 
 [tool.ruff]
-target-version = "py312"
+target-version = "py313"
 line-length = 100
 
 [tool.ruff.lint]
@@ -61,7 +60,7 @@ ignore = [
 known-first-party = ["custom_components.wodify"]
 
 [tool.mypy]
-python_version = "3.12"
+python_version = "3.13"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = false

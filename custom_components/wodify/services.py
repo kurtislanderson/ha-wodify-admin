@@ -35,6 +35,24 @@ _SERVICE_SET_EVENT_TIMING = "set_event_timing"
 _SERVICE_SEND_EMAIL = "send_email"
 _SERVICE_FLAG = "services_registered"
 
+REFRESH_SCHEMA = vol.Schema({vol.Required("entry_id"): cv.string})
+
+SET_FILTER_SCHEMA = vol.Schema(
+    {
+        vol.Required("entry_id"): cv.string,
+        vol.Optional(CONF_LOCATIONS): vol.All(cv.ensure_list, [cv.string]),
+        vol.Optional(CONF_PROGRAMS): vol.All(cv.ensure_list, [cv.string]),
+    }
+)
+
+SET_EVENT_TIMING_SCHEMA = vol.Schema(
+    {
+        vol.Required("entry_id"): cv.string,
+        vol.Optional(CONF_BEFORE_CLASS_MINUTES): vol.Coerce(int),
+        vol.Optional(CONF_AFTER_BLOCK_MINUTES): vol.Coerce(int),
+    }
+)
+
 
 def _get_runtime(hass: HomeAssistant, entry_id: str) -> WodifyRuntimeData:
     entry = hass.config_entries.async_get_entry(entry_id)
@@ -49,17 +67,13 @@ def _get_runtime(hass: HomeAssistant, entry_id: str) -> WodifyRuntimeData:
 
 
 async def _async_handle_refresh(hass: HomeAssistant, call: ServiceCall) -> None:
-    entry_id = call.data.get("entry_id")
-    if not entry_id:
-        raise ServiceValidationError(translation_domain=DOMAIN, translation_key="entry_id_required")
+    entry_id = call.data["entry_id"]
     runtime = _get_runtime(hass, entry_id)
     await runtime.coordinator.async_request_refresh()
 
 
 async def _async_handle_set_filter(hass: HomeAssistant, call: ServiceCall) -> None:
-    entry_id = call.data.get("entry_id")
-    if not entry_id:
-        raise ServiceValidationError(translation_domain=DOMAIN, translation_key="entry_id_required")
+    entry_id = call.data["entry_id"]
 
     locations = call.data.get(CONF_LOCATIONS)
     programs = call.data.get(CONF_PROGRAMS)
@@ -81,8 +95,9 @@ async def _async_handle_set_filter(hass: HomeAssistant, call: ServiceCall) -> No
 
     hass.config_entries.async_update_entry(
         config_entry,
-        data={
-            **config_entry.data,
+        # options override data on reload, so the filter must live in options
+        options={
+            **config_entry.options,
             CONF_LOCATIONS: list(locations),
             CONF_PROGRAMS: list(programs),
         },
@@ -90,9 +105,7 @@ async def _async_handle_set_filter(hass: HomeAssistant, call: ServiceCall) -> No
 
 
 async def _async_handle_set_event_timing(hass: HomeAssistant, call: ServiceCall) -> None:
-    entry_id = call.data.get("entry_id")
-    if not entry_id:
-        raise ServiceValidationError(translation_domain=DOMAIN, translation_key="entry_id_required")
+    entry_id = call.data["entry_id"]
 
     before_minutes = int(call.data.get(CONF_BEFORE_CLASS_MINUTES, DEFAULT_BEFORE_CLASS_MINUTES))
     after_minutes = int(call.data.get(CONF_AFTER_BLOCK_MINUTES, DEFAULT_AFTER_BLOCK_MINUTES))
@@ -200,16 +213,19 @@ async def async_setup_services(hass: HomeAssistant) -> None:
         DOMAIN,
         _SERVICE_REFRESH,
         handle_refresh,
+        schema=REFRESH_SCHEMA,
     )
     hass.services.async_register(
         DOMAIN,
         _SERVICE_SET_FILTER,
         handle_set_filter,
+        schema=SET_FILTER_SCHEMA,
     )
     hass.services.async_register(
         DOMAIN,
         _SERVICE_SET_EVENT_TIMING,
         handle_set_event_timing,
+        schema=SET_EVENT_TIMING_SCHEMA,
     )
 
     domain_data[_SERVICE_FLAG] = True

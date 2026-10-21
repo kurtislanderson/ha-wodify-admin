@@ -7,6 +7,7 @@ from collections.abc import Callable, Iterable
 from datetime import datetime, timedelta
 from typing import Any
 
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
@@ -127,6 +128,7 @@ class WodifyDataUpdateCoordinator(DataUpdateCoordinator[list[WodifyClass]]):
         update_interval: int,
         exclude_private_training: bool = True,
         block_gap_minutes: int = BLOCK_GAP_THRESHOLD,
+        config_entry: ConfigEntry | None = None,
     ) -> None:
         """Initialise the coordinator."""
 
@@ -152,6 +154,7 @@ class WodifyDataUpdateCoordinator(DataUpdateCoordinator[list[WodifyClass]]):
         super().__init__(
             hass,
             _LOGGER,
+            config_entry=config_entry,
             name=DOMAIN,
             update_interval=timedelta(minutes=update_interval),
         )

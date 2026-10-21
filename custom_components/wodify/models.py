@@ -10,6 +10,7 @@ from zoneinfo import ZoneInfo
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.device_registry import DeviceInfo
+from homeassistant.util import dt as dt_util
 
 from .const import DOMAIN
 
@@ -21,11 +22,6 @@ if TYPE_CHECKING:
 DEFAULT_COACH_NAME = "Not Available"
 DEFAULT_LOCATION_NAME = "Unknown"
 DEFAULT_PROGRAM_NAME = "Unknown"
-
-# Wodify API returns times in the gym's local timezone
-# Default to US Eastern since most Wodify gyms are in the US
-DEFAULT_TIMEZONE = ZoneInfo("America/New_York")
-
 
 @dataclass
 class WodifyRuntimeData:
@@ -57,7 +53,8 @@ def _ensure_timezone(dt: datetime, tz: ZoneInfo | None = None) -> datetime:
     """
     if dt.tzinfo is None:
         # API returns local gym time, not UTC
-        return dt.replace(tzinfo=tz or DEFAULT_TIMEZONE)
+        # Gym local time; assume the gym is in the HA-configured time zone
+        return dt.replace(tzinfo=tz or dt_util.get_default_time_zone())
     return dt
 
 

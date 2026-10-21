@@ -32,7 +32,7 @@
           "block_gap_minutes": "Block gap (classes closer than this count as one block)"
         }
       },
-      "reauth": {
+      "reauth_confirm": {
         "title": "Re-authenticate Wodify",
         "description": "Your Wodify API key is no longer valid. Please enter a new API key.",
         "data": {
@@ -187,9 +187,6 @@
     }
   },
   "exceptions": {
-    "entry_id_required": {
-      "message": "entry_id is required"
-    },
     "entry_not_found": {
       "message": "Config entry {entry_id} not found"
     },

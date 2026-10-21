@@ -67,6 +67,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: WodifyConfigEntry) -> bo
     # Create coordinator
     coordinator = WodifyDataUpdateCoordinator(
         hass=hass,
+        config_entry=entry,
         api=api,
         locations=locations,
         programs=programs,
@@ -86,6 +87,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: WodifyConfigEntry) -> bo
     # Link event manager to coordinator for cancellation handling
     coordinator.event_manager = event_manager
 
+    # Listen for option updates (registered before the first refresh so a failed
+    # setup still reloads on option changes)
+    entry.async_on_unload(entry.add_update_listener(async_reload_entry))
+
     # Perform initial data fetch
     await coordinator.async_config_entry_first_refresh()
 
@@ -96,7 +101,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: WodifyConfigEntry) -> bo
     def _schedule_events_on_update() -> None:
         event_manager.schedule_events()
 
-    coordinator.async_add_listener(_schedule_events_on_update)
+    entry.async_on_unload(coordinator.async_add_listener(_schedule_events_on_update))
 
     # Store runtime data
     entry.runtime_data = WodifyRuntimeData(
@@ -105,9 +110,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: WodifyConfigEntry) -> bo
 
     # Set up platforms
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
-
-    # Listen for option updates
-    entry.async_on_unload(entry.add_update_listener(async_reload_entry))
 
     return True
 

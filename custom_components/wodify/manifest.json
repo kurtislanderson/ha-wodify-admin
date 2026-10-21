@@ -9,5 +9,6 @@
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/kurtislanderson/ha-wodify-admin/issues",
   "requirements": [],
-  "version": "0.2.2"
+  "single_config_entry": true,
+  "version": "0.2.3"
 }

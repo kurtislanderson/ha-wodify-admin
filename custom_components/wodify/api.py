@@ -337,7 +337,7 @@ class WodifyAPI:
             if self._hass and hasattr(self._hass, "loop"):
                 loop = self._hass.loop
             else:
-                loop = asyncio.get_event_loop()
+                loop = asyncio.get_running_loop()
             now = loop.time()
             elapsed = now - self._last_request_time
             if elapsed < self._DEFAULT_DEBOUNCE:

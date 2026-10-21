@@ -1,5 +1,7 @@
 """Constants for the Wodify integration."""
 
+from homeassistant.const import Platform
+
 DOMAIN = "wodify"
 
 # Configuration keys
@@ -45,4 +47,4 @@ COORDINATOR_UPDATE_METHOD = "_async_update_data"
 CACHE_MAX_AGE_HOURS = 48  # How long to use cached data when API is down (2 days)
 
 # Supported platforms
-PLATFORMS = ["sensor", "binary_sensor", "calendar", "button"]
+PLATFORMS = [Platform.SENSOR, Platform.BINARY_SENSOR, Platform.CALENDAR, Platform.BUTTON]

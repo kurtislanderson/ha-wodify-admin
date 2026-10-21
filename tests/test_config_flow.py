@@ -150,38 +150,36 @@ class TestConfigFlow:
         """Test flow when already configured."""
         mock_config_entry.add_to_hass(hass)
 
+        # single_config_entry in the manifest makes HA abort before the handler runs
         result = await hass.config_entries.flow.async_init(
             DOMAIN, context={"source": config_entries.SOURCE_USER}
         )
-        result = await hass.config_entries.flow.async_configure(
-            result["flow_id"],
-            {CONF_API_KEY: "test_key"},
-        )
 
         assert result["type"] == FlowResultType.ABORT
-        assert result["reason"] == "already_configured"
+        assert result["reason"] == "single_instance_allowed"
 
     async def test_reauth_flow(self, hass, mock_config_entry, mock_wodify_api):  # noqa: ARG002
         """Test reauth flow."""
         mock_config_entry.add_to_hass(hass)
 
-        # Start reauth flow - don't pass data= to see the form first
         result = await hass.config_entries.flow.async_init(
             DOMAIN,
             context={
                 "source": config_entries.SOURCE_REAUTH,
                 "entry_id": mock_config_entry.entry_id,
             },
+            data=mock_config_entry.data,
         )
 
         assert result["type"] == FlowResultType.FORM
-        assert result["step_id"] == "reauth"
+        assert result["step_id"] == "reauth_confirm"
 
-        # Submit new API key
-        result = await hass.config_entries.flow.async_configure(
-            result["flow_id"],
-            {CONF_API_KEY: "new_api_key"},
-        )
+        # Submit new API key; patch setup so the reload does not hit the network
+        with patch("custom_components.wodify.async_setup_entry", return_value=True):
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                {CONF_API_KEY: "new_api_key"},
+            )
 
         assert result["type"] == FlowResultType.ABORT
         assert result["reason"] == "reauth_successful"

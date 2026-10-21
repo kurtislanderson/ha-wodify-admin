@@ -285,9 +285,40 @@ class TestServices:
             mock_update.assert_called_once()
             call_args = mock_update.call_args[0]
             assert call_args[0] == config_entry
-            assert CONF_LOCATIONS in mock_update.call_args[1]["data"]
-            assert mock_update.call_args[1]["data"][CONF_LOCATIONS] == ["New Location"]
-            assert mock_update.call_args[1]["data"][CONF_PROGRAMS] == ["New Program"]
+            assert mock_update.call_args[1]["options"][CONF_LOCATIONS] == ["New Location"]
+            assert mock_update.call_args[1]["options"][CONF_PROGRAMS] == ["New Program"]
+
+    async def test_set_filter_overrides_existing_options(self, hass, mock_integration_setup):
+        """set_filter must win over options locations/programs (options override data)."""
+        config_entry, coordinator, _ = mock_integration_setup
+        coordinator.async_set_filters = AsyncMock()
+        hass.config_entries.async_update_entry(
+            config_entry,
+            options={
+                **config_entry.options,
+                CONF_LOCATIONS: ["Old Location"],
+                CONF_PROGRAMS: ["Old Program"],
+            },
+        )
+
+        from custom_components.wodify.services import async_setup_services
+
+        await async_setup_services(hass)
+        await hass.services.async_call(
+            DOMAIN,
+            "set_filter",
+            {
+                "entry_id": config_entry.entry_id,
+                "locations": ["New Location"],
+                "programs": ["New Program"],
+            },
+            blocking=True,
+        )
+
+        assert config_entry.options[CONF_LOCATIONS] == ["New Location"]
+        assert config_entry.options[CONF_PROGRAMS] == ["New Program"]
+        # unrelated options preserved
+        assert config_entry.options["update_interval"] == 5
 
     async def test_service_options_update(self, hass, mock_integration_setup):
         """Test services update config entry options."""
