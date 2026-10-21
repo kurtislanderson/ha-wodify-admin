@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import voluptuous as vol
 from homeassistant.config_entries import ConfigEntryState
-from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.exceptions import ServiceValidationError
+from homeassistant.core import HomeAssistant, ServiceCall, SupportsResponse
+from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
+from homeassistant.helpers import config_validation as cv
 
+from .api import ApiError
 from .const import (
     CONF_AFTER_BLOCK_MINUTES,
     CONF_BEFORE_CLASS_MINUTES,
@@ -24,6 +27,7 @@ from .models import WodifyRuntimeData
 _SERVICE_REFRESH = "refresh_now"
 _SERVICE_SET_FILTER = "set_filter"
 _SERVICE_SET_EVENT_TIMING = "set_event_timing"
+_SERVICE_SEND_EMAIL = "send_email"
 _SERVICE_FLAG = "services_registered"
 
 
@@ -107,6 +111,43 @@ async def _async_handle_set_event_timing(hass: HomeAssistant, call: ServiceCall)
     )
 
 
+SEND_EMAIL_SCHEMA = vol.Schema(
+    {
+        vol.Required("entry_id"): cv.string,
+        vol.Required("to_email"): cv.string,
+        vol.Required("subject"): cv.string,
+        vol.Required("body"): cv.string,
+        vol.Optional("from_email"): cv.string,
+        vol.Optional("cc"): vol.All(cv.ensure_list, [cv.string]),
+        vol.Optional("bcc"): vol.All(cv.ensure_list, [cv.string]),
+    }
+)
+
+
+async def _async_handle_send_email(
+    hass: HomeAssistant, call: ServiceCall
+) -> dict[str, int | None] | None:
+    runtime = _get_runtime(hass, call.data["entry_id"])
+    try:
+        result = await runtime.api.send_email(
+            call.data["to_email"],
+            call.data["subject"],
+            call.data["body"],
+            from_email=call.data.get("from_email"),
+            cc=call.data.get("cc"),
+            bcc=call.data.get("bcc"),
+        )
+    except ApiError as err:  # ApiAuthError is a subclass
+        raise HomeAssistantError(
+            translation_domain=DOMAIN,
+            translation_key="send_email_failed",
+            translation_placeholders={"error": str(err)},
+        ) from err
+    if call.return_response:
+        return {"email_service_email_id": result.get("email_service_email_id")}
+    return None
+
+
 async def async_setup_services(hass: HomeAssistant) -> None:
     """Register Wodify services."""
 
@@ -124,6 +165,16 @@ async def async_setup_services(hass: HomeAssistant) -> None:
     async def handle_set_event_timing(call: ServiceCall) -> None:
         await _async_handle_set_event_timing(hass, call)
 
+    async def handle_send_email(call: ServiceCall) -> dict[str, int | None] | None:
+        return await _async_handle_send_email(hass, call)
+
+    hass.services.async_register(
+        DOMAIN,
+        _SERVICE_SEND_EMAIL,
+        handle_send_email,
+        schema=SEND_EMAIL_SCHEMA,
+        supports_response=SupportsResponse.OPTIONAL,
+    )
     hass.services.async_register(
         DOMAIN,
         _SERVICE_REFRESH,
@@ -150,6 +201,7 @@ async def async_unload_services(hass: HomeAssistant) -> None:
     if not domain_data.get(_SERVICE_FLAG):
         return
 
+    hass.services.async_remove(DOMAIN, _SERVICE_SEND_EMAIL)
     hass.services.async_remove(DOMAIN, _SERVICE_REFRESH)
     hass.services.async_remove(DOMAIN, _SERVICE_SET_FILTER)
     hass.services.async_remove(DOMAIN, _SERVICE_SET_EVENT_TIMING)

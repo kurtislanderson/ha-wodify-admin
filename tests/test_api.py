@@ -292,3 +292,70 @@ class TestWodifyAPI:
             # Should only return valid classes
             assert len(classes) == 1
             assert classes[0].id == "123"
+
+
+EMAIL_URL = "https://api.wodify.com/v1/communications/emails"
+
+
+class TestSendEmail:
+    """Test WodifyAPI.send_email."""
+
+    @pytest.mark.asyncio
+    async def test_posts_payload(self, api_client):
+        """Correct URL, method, headers and payload; empty optionals omitted."""
+        with aioresponses() as mock:
+            mock.post(
+                EMAIL_URL,
+                payload={"is_success": True, "email_service_email_id": 7},
+            )
+            result = await api_client.send_email("a@x.com", "Hi", "Body", cc=["c@x.com"], bcc=[])
+
+            assert result["email_service_email_id"] == 7
+            (key, calls), = mock.requests.items()
+            assert key[0] == "POST"
+            kwargs = calls[0].kwargs
+            assert kwargs["json"] == {
+                "to_email": "a@x.com",
+                "subject": "Hi",
+                "body": "Body",
+                "cc": ["c@x.com"],
+            }
+            assert kwargs["headers"]["x-api-key"] == api_client.api_key
+
+    @pytest.mark.asyncio
+    async def test_includes_from_and_bcc(self, api_client):
+        """Optional from_email and bcc are sent when given."""
+        with aioresponses() as mock:
+            mock.post(EMAIL_URL, payload={"is_success": True})
+            await api_client.send_email("a@x.com", "S", "B", from_email="f@x.com", bcc=["b@x.com"])
+            payload = next(iter(mock.requests.values()))[0].kwargs["json"]
+            assert payload["from_email"] == "f@x.com"
+            assert payload["bcc"] == ["b@x.com"]
+
+    @pytest.mark.asyncio
+    async def test_rejected_raises(self, api_client):
+        """HTTP 200 with is_success false raises ApiError with validation text."""
+        with aioresponses() as mock:
+            mock.post(
+                EMAIL_URL,
+                payload={"is_success": False, "wodify_validation_result": "Bad from address"},
+            )
+            with pytest.raises(ApiError, match="Bad from address"):
+                await api_client.send_email("a@x.com", "S", "B")
+
+    @pytest.mark.asyncio
+    async def test_auth_error(self, api_client):
+        """401 raises ApiAuthError."""
+        with aioresponses() as mock:
+            mock.post(EMAIL_URL, status=401, payload={})
+            with pytest.raises(ApiAuthError):
+                await api_client.send_email("a@x.com", "S", "B")
+
+    @pytest.mark.asyncio
+    async def test_client_error_not_retried(self, api_client):
+        """aiohttp.ClientError becomes ApiError and is attempted exactly once."""
+        with aioresponses() as mock:
+            mock.post(EMAIL_URL, exception=aiohttp.ClientError("boom"))
+            with pytest.raises(ApiError):
+                await api_client.send_email("a@x.com", "S", "B")
+            assert sum(len(v) for v in mock.requests.values()) == 1

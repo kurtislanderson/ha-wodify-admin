@@ -110,7 +110,7 @@
       "description": "Force an immediate refresh of class data.",
       "fields": {
         "entry_id": {
-          "name": "Config Entry ID",
+          "name": "Config Entry",
           "description": "The ID of the Wodify config entry to refresh."
         }
       }
@@ -120,7 +120,7 @@
       "description": "Update location and program filters.",
       "fields": {
         "entry_id": {
-          "name": "Config Entry ID",
+          "name": "Config Entry",
           "description": "The ID of the Wodify config entry to update."
         },
         "locations": {
@@ -138,7 +138,7 @@
       "description": "Update pre-class and post-block automation trigger timing.",
       "fields": {
         "entry_id": {
-          "name": "Config Entry ID",
+          "name": "Config Entry",
           "description": "The ID of the Wodify config entry to update."
         },
         "before_class_minutes": {
@@ -148,6 +148,40 @@
         "after_block_minutes": {
           "name": "Post-Block Trigger Minutes",
           "description": "Minutes after class block ends to trigger automation (5-60)."
+        }
+      }
+    },
+    "send_email": {
+      "name": "Send Email",
+      "description": "Send an email through Wodify's communications API.",
+      "fields": {
+        "entry_id": {
+          "name": "Config Entry",
+          "description": "The Wodify config entry to send with."
+        },
+        "to_email": {
+          "name": "To",
+          "description": "Recipient email address."
+        },
+        "subject": {
+          "name": "Subject",
+          "description": "Email subject."
+        },
+        "body": {
+          "name": "Body",
+          "description": "Email body. Format depends on Wodify; test with your own address first."
+        },
+        "from_email": {
+          "name": "From",
+          "description": "Sender address. Must be a Wodify Staff or Business email."
+        },
+        "cc": {
+          "name": "CC",
+          "description": "Addresses to copy."
+        },
+        "bcc": {
+          "name": "BCC",
+          "description": "Addresses to blind copy."
         }
       }
     }
@@ -167,6 +201,9 @@
     },
     "invalid_after_minutes": {
       "message": "after_block_minutes must be between {min} and {max}"
+    },
+    "send_email_failed": {
+      "message": "Failed to send email via Wodify: {error}"
     }
   }
 }

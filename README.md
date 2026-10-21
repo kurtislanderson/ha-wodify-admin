@@ -43,7 +43,7 @@ A Home Assistant integration for Wodify class schedules. Use your Wodify schedul
 
 ## Requirements
 
-- Home Assistant 2024.1.0 or newer
+- Home Assistant 2024.6 or newer
 - Wodify API key (requires gym owner/administrator access)
 - Active internet connection
 
@@ -57,6 +57,8 @@ A Home Assistant integration for Wodify class schedules. Use your Wodify schedul
 2. Search for "Wodify" in HACS
 3. Click "Download"
 4. Restart Home Assistant
+
+On Home Assistant 2026.11+, HACS is built in as the Marketplace.
 
 ### Manual Installation
 
@@ -262,14 +264,14 @@ Force an immediate refresh of class data from the Wodify API.
 
 | Field | Required | Description |
 |-------|----------|-------------|
-| `entry_id` | Yes | The config entry ID of the Wodify integration |
+| `entry_id` | Yes | The Wodify config entry (picked from a dropdown in the UI) |
 
 ### wodify.set_filter
 Update location and program filters.
 
 | Field | Required | Description |
 |-------|----------|-------------|
-| `entry_id` | Yes | The config entry ID |
+| `entry_id` | Yes | The Wodify config entry |
 | `locations` | Yes | List of locations to track |
 | `programs` | Yes | List of programs to include |
 
@@ -278,9 +280,29 @@ Update pre-class and post-block trigger timing.
 
 | Field | Required | Description |
 |-------|----------|-------------|
-| `entry_id` | Yes | The config entry ID |
+| `entry_id` | Yes | The Wodify config entry |
 | `before_class_minutes` | No | Pre-class trigger window in minutes (5-60, default: 15) |
 | `after_block_minutes` | No | Post-block trigger window in minutes (5-60, default: 15) |
+
+### wodify.send_email
+Send an email through Wodify's communications API.
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `entry_id` | Yes | The Wodify config entry |
+| `to_email` | Yes | Recipient address |
+| `subject` | Yes | Email subject |
+| `body` | Yes | Email body |
+| `from_email` | No | Sender address; must be a Wodify Staff or Business email |
+| `cc` | No | List of addresses to copy |
+| `bcc` | No | List of addresses to blind copy |
+
+**Response** (when requested): `email_service_email_id`.
+
+Notes:
+- The API key needs the Communications permission in Wodify.
+- Failures are not retried, to avoid sending duplicate emails. Wodify can reject a send with HTTP 200; this surfaces as an error.
+- Body format depends on Wodify; test with your own address first.
 
 ## Precise Timing
 
@@ -348,6 +370,31 @@ automation:
       - service: light.turn_off
         target:
           entity_id: light.gym_lights
+```
+
+### Example: Email a staff list
+
+`config_entry_id()` finds the entry from any Wodify entity.
+
+```yaml
+send_wodify_staff_email:
+  alias: Send Wodify Staff Email
+  mode: queued
+  fields:
+    subject: {required: true, selector: {text: {}}}
+    body: {required: true, selector: {text: {multiline: true}}}
+  variables:
+    recipients:
+      - coach1@example.com
+      - coach2@example.com
+  sequence:
+    - action: wodify.send_email
+      data:
+        entry_id: "{{ config_entry_id('sensor.wodify_api_status') }}"
+        to_email: "{{ recipients[0] }}"
+        cc: "{{ recipients[1:] }}"
+        subject: "{{ subject }}"
+        body: "{{ body }}"
 ```
 
 ### Using Trigger Window Attributes

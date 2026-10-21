@@ -1,50 +1,35 @@
 refresh_now:
-  name: Refresh Now
-  description: Force an immediate refresh of class data from the Wodify API.
   fields:
     entry_id:
-      name: Config Entry ID
-      description: The ID of the Wodify config entry to refresh.
       required: true
       selector:
-        text:
+        config_entry:
+          integration: wodify
 
 set_filter:
-  name: Set Filter
-  description: Update location and program filters for the integration.
   fields:
     entry_id:
-      name: Config Entry ID
-      description: The ID of the Wodify config entry to update.
       required: true
       selector:
-        text:
+        config_entry:
+          integration: wodify
     locations:
-      name: Locations
-      description: List of gym locations to track.
       required: true
       selector:
         object:
     programs:
-      name: Programs
-      description: List of programs to include in the schedule.
       required: true
       selector:
         object:
 
 set_event_timing:
-  name: Set Event Timing
-  description: Update the timing for notification events.
   fields:
     entry_id:
-      name: Config Entry ID
-      description: The ID of the Wodify config entry to update.
       required: true
       selector:
-        text:
+        config_entry:
+          integration: wodify
     before_class_minutes:
-      name: Before Class Minutes
-      description: Minutes before class to fire the notification event (5-60).
       required: false
       default: 15
       selector:
@@ -53,8 +38,6 @@ set_event_timing:
           max: 60
           unit_of_measurement: minutes
     after_block_minutes:
-      name: After Block Minutes
-      description: Minutes after class block ends to fire the notification event (5-60).
       required: false
       default: 15
       selector:
@@ -62,3 +45,44 @@ set_event_timing:
           min: 5
           max: 60
           unit_of_measurement: minutes
+
+send_email:
+  fields:
+    entry_id:
+      required: true
+      selector:
+        config_entry:
+          integration: wodify
+    to_email:
+      required: true
+      example: member@example.com
+      selector:
+        text:
+    subject:
+      required: true
+      example: Schedule change
+      selector:
+        text:
+    body:
+      required: true
+      example: Tomorrow's 6am class is moved to 7am.
+      selector:
+        text:
+          multiline: true
+    from_email:
+      required: false
+      example: staff@example.com
+      selector:
+        text:
+    cc:
+      required: false
+      example: '["coach@example.com"]'
+      selector:
+        text:
+          multiple: true
+    bcc:
+      required: false
+      example: '["owner@example.com"]'
+      selector:
+        text:
+          multiple: true

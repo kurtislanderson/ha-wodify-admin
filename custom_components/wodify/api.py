@@ -71,6 +71,36 @@ class WodifyAPI:
         """
         return await self._get_all_pages("programs", "programs")
 
+    async def send_email(
+        self,
+        to_email: str,
+        subject: str,
+        body: str,
+        *,
+        from_email: str | None = None,
+        cc: list[str] | None = None,
+        bcc: list[str] | None = None,
+    ) -> dict[str, Any]:
+        """Send an email through Wodify's communications API."""
+        payload: dict[str, Any] = {"to_email": to_email, "subject": subject, "body": body}
+        for key, value in (("from_email", from_email), ("cc", cc), ("bcc", bcc)):
+            if value:
+                payload[key] = value
+
+        await self._apply_rate_limit()
+        # Single attempt on purpose: retrying a send could deliver duplicate emails.
+        try:
+            result = await self._execute_request(
+                f"{self.base_url}/communications/emails", method="POST", json=payload
+            )
+        except aiohttp.ClientError as err:
+            raise ApiError(f"Request failed: {err}") from err
+
+        if not isinstance(result, dict) or result.get("is_success") is not True:
+            reason = result.get("wodify_validation_result") if isinstance(result, dict) else None
+            raise ApiError(reason or "Wodify rejected the email")
+        return result
+
     async def search_classes(
         self,
         *,
@@ -283,14 +313,23 @@ class WodifyAPI:
                 now = loop.time()
             self._last_request_time = now
 
-    async def _execute_request(self, url: str, *, params: dict[str, Any] | None = None) -> Any:
+    async def _execute_request(
+        self,
+        url: str,
+        *,
+        method: str = "GET",
+        params: dict[str, Any] | None = None,
+        json: dict[str, Any] | None = None,
+    ) -> Any:
         """Perform the HTTP request and return decoded JSON."""
         headers = {"x-api-key": self.api_key}
         try:
-            async with self._session.get(
+            async with self._session.request(
+                method,
                 url,
                 headers=headers,
                 params=params,
+                json=json,
                 timeout=aiohttp.ClientTimeout(total=API_TIMEOUT),
             ) as resp:
                 if resp.status == 401:

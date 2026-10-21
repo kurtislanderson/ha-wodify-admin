@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 from homeassistant.config_entries import ConfigEntryState
-from homeassistant.exceptions import ServiceValidationError
+from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.wodify.const import (
@@ -311,3 +311,71 @@ class TestServices:
             options = mock_update.call_args[1]["options"]
             assert options[CONF_BEFORE_CLASS_MINUTES] == 45
             assert options[CONF_AFTER_BLOCK_MINUTES] == 30
+
+
+class TestSendEmailService:
+    """Test wodify.send_email."""
+
+    async def test_passes_fields_and_returns_response(self, hass, mock_integration_setup):
+        """Fields reach the API and the email id is returned."""
+        config_entry, _, _ = mock_integration_setup
+        api = config_entry.runtime_data.api
+        api.send_email = AsyncMock(return_value={"is_success": True, "email_service_email_id": 42})
+
+        from custom_components.wodify.services import async_setup_services
+
+        await async_setup_services(hass)
+        result = await hass.services.async_call(
+            DOMAIN,
+            "send_email",
+            {
+                "entry_id": config_entry.entry_id,
+                "to_email": "a@x.com",
+                "subject": "S",
+                "body": "B",
+                "cc": "c@x.com",
+            },
+            blocking=True,
+            return_response=True,
+        )
+
+        assert result == {"email_service_email_id": 42}
+        api.send_email.assert_awaited_once_with(
+            "a@x.com", "S", "B", from_email=None, cc=["c@x.com"], bcc=None
+        )
+
+    async def test_api_error_maps_to_ha_error(self, hass, mock_integration_setup):
+        """ApiError becomes HomeAssistantError with send_email_failed key."""
+        from custom_components.wodify.api import ApiError
+        from custom_components.wodify.services import async_setup_services
+
+        config_entry, _, _ = mock_integration_setup
+        config_entry.runtime_data.api.send_email = AsyncMock(side_effect=ApiError("nope"))
+        await async_setup_services(hass)
+
+        with pytest.raises(HomeAssistantError) as exc:
+            await hass.services.async_call(
+                DOMAIN,
+                "send_email",
+                {
+                    "entry_id": config_entry.entry_id,
+                    "to_email": "a@x.com",
+                    "subject": "S",
+                    "body": "B",
+                },
+                blocking=True,
+            )
+        assert exc.value.translation_key == "send_email_failed"
+
+    async def test_unknown_entry(self, hass):
+        """Unknown entry_id raises ServiceValidationError."""
+        from custom_components.wodify.services import async_setup_services
+
+        await async_setup_services(hass)
+        with pytest.raises(ServiceValidationError):
+            await hass.services.async_call(
+                DOMAIN,
+                "send_email",
+                {"entry_id": "missing", "to_email": "a@x.com", "subject": "S", "body": "B"},
+                blocking=True,
+            )

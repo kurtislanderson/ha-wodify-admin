@@ -1,0 +1,8 @@
+{
+  "services": {
+    "refresh_now": { "service": "mdi:refresh" },
+    "set_filter": { "service": "mdi:filter" },
+    "set_event_timing": { "service": "mdi:timer-cog-outline" },
+    "send_email": { "service": "mdi:email-fast-outline" }
+  }
+}
