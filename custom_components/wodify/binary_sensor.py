@@ -36,7 +36,7 @@ async def async_setup_entry(
     coordinator = config_entry.runtime_data.coordinator
     event_manager = config_entry.runtime_data.event_manager
 
-    sensors = [
+    sensors: list[BinarySensorEntity] = [
         WodifyClassOngoingBinarySensor(coordinator, config_entry),
         WodifyClassStartingSoonBinarySensor(coordinator, config_entry),
         WodifyBlockStartingSoonBinarySensor(coordinator, config_entry),
@@ -155,9 +155,10 @@ class WodifyClassStartingSoonBinarySensor(
 
     @property
     def _before_minutes(self) -> int:
-        return self._config_entry.options.get(
+        minutes: int = self._config_entry.options.get(
             CONF_BEFORE_CLASS_MINUTES, DEFAULT_BEFORE_CLASS_MINUTES
         )
+        return minutes
 
     @property
     def available(self) -> bool:
@@ -252,9 +253,10 @@ class WodifyBlockStartingSoonBinarySensor(
 
     @property
     def _before_minutes(self) -> int:
-        return self._config_entry.options.get(
+        minutes: int = self._config_entry.options.get(
             CONF_BEFORE_CLASS_MINUTES, DEFAULT_BEFORE_CLASS_MINUTES
         )
+        return minutes
 
     @property
     def available(self) -> bool:
@@ -383,7 +385,10 @@ class WodifyBlockJustEndedBinarySensor(
 
     @property
     def _after_minutes(self) -> int:
-        return self._config_entry.options.get(CONF_AFTER_BLOCK_MINUTES, DEFAULT_AFTER_BLOCK_MINUTES)
+        minutes: int = self._config_entry.options.get(
+            CONF_AFTER_BLOCK_MINUTES, DEFAULT_AFTER_BLOCK_MINUTES
+        )
+        return minutes
 
     @property
     def available(self) -> bool:

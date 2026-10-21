@@ -2,15 +2,14 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 from typing import Any
 
 import voluptuous as vol
 from homeassistant import config_entries
-from homeassistant.config_entries import ConfigEntry
+from homeassistant.config_entries import ConfigEntry, ConfigFlowResult
 from homeassistant.const import CONF_API_KEY
 from homeassistant.core import HomeAssistant
-from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.selector import (
@@ -79,7 +78,7 @@ class WodifyConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         session = async_get_clientsession(hass)
         return WodifyAPI(api_key, session, hass)
 
-    async def async_step_user(self, user_input: dict[str, Any] | None = None) -> FlowResult:
+    async def async_step_user(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         errors: dict[str, str] = {}
 
         if user_input is not None:
@@ -108,7 +107,7 @@ class WodifyConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
-    async def async_step_locations(self, user_input: dict[str, Any] | None = None) -> FlowResult:
+    async def async_step_locations(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         errors: dict[str, str] = {}
         options = set(self._location_options)
 
@@ -124,7 +123,9 @@ class WodifyConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             {
                 vol.Required(
                     CONF_LOCATIONS, default=list(self._selected_locations)
-                ): cv.multi_select(options if options else set())
+                ): cv.multi_select(
+                    options if options else set()  # type: ignore[arg-type]  # stub wants dict|list; set works
+                )
             }
         )
         return self.async_show_form(
@@ -133,7 +134,7 @@ class WodifyConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
-    async def async_step_programs(self, user_input: dict[str, Any] | None = None) -> FlowResult:
+    async def async_step_programs(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         errors: dict[str, str] = {}
         options = set(self._program_options)
 
@@ -148,7 +149,7 @@ class WodifyConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         schema = vol.Schema(
             {
                 vol.Required(CONF_PROGRAMS, default=list(self._selected_programs)): cv.multi_select(
-                    options if options else set()
+                    options if options else set()  # type: ignore[arg-type]  # stub wants dict|list; set works
                 )
             }
         )
@@ -158,7 +159,7 @@ class WodifyConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
-    async def async_step_options(self, user_input: dict[str, Any] | None = None) -> FlowResult:
+    async def async_step_options(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         errors: dict[str, str] = {}
 
         if user_input is not None:
@@ -247,7 +248,7 @@ class WodifyConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
-    async def async_step_reauth(self, user_input: dict[str, Any] | None = None) -> FlowResult:
+    async def async_step_reauth(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         errors: dict[str, str] = {}
         entry_id = self.context.get("entry_id")
         entry = self.hass.config_entries.async_get_entry(entry_id) if entry_id else None
@@ -311,11 +312,11 @@ class WodifyOptionsFlow(config_entries.OptionsFlowWithConfigEntry):
         if extracted_locations:
             self._locations = extracted_locations
 
-    async def async_step_init(self, user_input: dict[str, Any] | None = None) -> FlowResult:
+    async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         await self._load_dynamic_options(self.hass)
 
         errors: dict[str, str] = {}
-        current_options = self.config_entry.options or {}
+        current_options: Mapping[str, Any] = self.config_entry.options or {}
 
         update_interval = current_options.get(CONF_UPDATE_INTERVAL, DEFAULT_UPDATE_INTERVAL)
         before_minutes = current_options.get(
@@ -402,10 +403,10 @@ class WodifyOptionsFlow(config_entries.OptionsFlowWithConfigEntry):
                 ),
                 vol.Required(CONF_EXCLUDE_PRIVATE_TRAINING, default=exclude_private): bool,
                 vol.Required(CONF_LOCATIONS, default=list(selected_locations)): cv.multi_select(
-                    set(self._locations)
+                    set(self._locations)  # type: ignore[arg-type]  # stub wants dict|list; set works
                 ),
                 vol.Required(CONF_PROGRAMS, default=list(selected_programs)): cv.multi_select(
-                    set(self._programs)
+                    set(self._programs)  # type: ignore[arg-type]  # stub wants dict|list; set works
                 ),
             }
         )

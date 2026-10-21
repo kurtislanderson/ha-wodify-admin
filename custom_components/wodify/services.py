@@ -4,7 +4,12 @@ from __future__ import annotations
 
 import voluptuous as vol
 from homeassistant.config_entries import ConfigEntryState
-from homeassistant.core import HomeAssistant, ServiceCall, SupportsResponse
+from homeassistant.core import (
+    HomeAssistant,
+    ServiceCall,
+    ServiceResponse,
+    SupportsResponse,
+)
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
@@ -142,7 +147,7 @@ SEND_EMAIL_SCHEMA = vol.Schema(
 
 async def _async_handle_send_email(
     hass: HomeAssistant, call: ServiceCall
-) -> dict[str, int | None] | None:
+) -> ServiceResponse:
     runtime = _get_runtime(hass, call.data["entry_id"])
     try:
         result = await runtime.api.send_email(
@@ -181,7 +186,7 @@ async def async_setup_services(hass: HomeAssistant) -> None:
     async def handle_set_event_timing(call: ServiceCall) -> None:
         await _async_handle_set_event_timing(hass, call)
 
-    async def handle_send_email(call: ServiceCall) -> dict[str, int | None] | None:
+    async def handle_send_email(call: ServiceCall) -> ServiceResponse:
         return await _async_handle_send_email(hass, call)
 
     hass.services.async_register(

@@ -7,6 +7,7 @@ import logging
 from collections.abc import Callable
 from datetime import timedelta
 
+from homeassistant.components.binary_sensor import BinarySensorEntity
 from homeassistant.core import HassJob, HassJobType, HomeAssistant, callback
 from homeassistant.helpers.event import async_call_later as hass_async_call_later
 from homeassistant.util import dt as dt_util
@@ -61,7 +62,8 @@ def _ensure_async_call_later(hass: HomeAssistant) -> None:
         cancel = hass_async_call_later(hass, delay, job)
         return _CancelHandle(cancel)
 
-    hass.async_call_later = _async_call_later
+    # Dynamic shim for HA builds lacking the method; not in HomeAssistant's stubs.
+    hass.async_call_later = _async_call_later  # type: ignore[attr-defined]
 
 
 class _ScheduledEvent:
@@ -77,7 +79,7 @@ class _ScheduledEvent:
         self._cancelled = False
         self._callback = callback
         # Ensure we always schedule through async_call_later for HA friendly timing
-        self._handle = hass.async_call_later(max(delay, 0), self._run)
+        self._handle = hass.async_call_later(max(delay, 0), self._run)  # type: ignore[attr-defined]  # shim set in _ensure_async_call_later
 
     @callback
     def _run(self, *_: object) -> None:
@@ -116,14 +118,14 @@ class WodifyEventManager:
         self._upcoming_events: dict[str, _ScheduledEvent] = {}
         self._block_end_events: dict[str, _ScheduledEvent] = {}
         self._sensor_schedules: dict[str, _ScheduledEvent] = {}
-        self._binary_sensors: list = []
+        self._binary_sensors: list[BinarySensorEntity] = []
 
         # Link back to the coordinator so cancellation detection can notify us
         coordinator.event_manager = self
 
         _ensure_async_call_later(hass)
 
-    def register_binary_sensors(self, sensors: list) -> None:
+    def register_binary_sensors(self, sensors: list[BinarySensorEntity]) -> None:
         """Store references to binary sensors for time-based state updates."""
         self._binary_sensors = sensors
         # Schedule updates immediately if we have data
@@ -293,10 +295,10 @@ class WodifyEventManager:
         blocks = detect_class_blocks(classes, self.coordinator.block_gap_minutes)
 
         # Find sensors by type
-        class_starting_sensor = None
-        block_starting_sensor = None
-        block_ended_sensor = None
-        class_ongoing_sensor = None
+        class_starting_sensor: BinarySensorEntity | None = None
+        block_starting_sensor: BinarySensorEntity | None = None
+        block_ended_sensor: BinarySensorEntity | None = None
+        class_ongoing_sensor: BinarySensorEntity | None = None
 
         for sensor in self._binary_sensors:
             sensor_id = getattr(sensor, "_attr_unique_id", "")
@@ -322,7 +324,7 @@ class WodifyEventManager:
                     self._sensor_schedules[key] = _ScheduledEvent(
                         self.hass,
                         delay,
-                        lambda s=class_starting_sensor: s.async_write_ha_state(),
+                        class_starting_sensor.async_write_ha_state,
                     )
                     _LOGGER.debug("Scheduled class_starting ON at %s (delay %.1fs)", on_time, delay)
 
@@ -333,7 +335,7 @@ class WodifyEventManager:
                     self._sensor_schedules[key] = _ScheduledEvent(
                         self.hass,
                         delay,
-                        lambda s=class_starting_sensor: s.async_write_ha_state(),
+                        class_starting_sensor.async_write_ha_state,
                     )
                     _LOGGER.debug(
                         "Scheduled class_starting OFF at %s (delay %.1fs)",
@@ -361,7 +363,7 @@ class WodifyEventManager:
                     self._sensor_schedules[key] = _ScheduledEvent(
                         self.hass,
                         delay,
-                        lambda s=block_starting_sensor: s.async_write_ha_state(),
+                        block_starting_sensor.async_write_ha_state,
                     )
                     _LOGGER.debug("Scheduled block_starting ON at %s (delay %.1fs)", on_time, delay)
 
@@ -372,7 +374,7 @@ class WodifyEventManager:
                     self._sensor_schedules[key] = _ScheduledEvent(
                         self.hass,
                         delay,
-                        lambda s=block_starting_sensor: s.async_write_ha_state(),
+                        block_starting_sensor.async_write_ha_state,
                     )
                     _LOGGER.debug(
                         "Scheduled block_starting OFF at %s (delay %.1fs)",
@@ -394,7 +396,7 @@ class WodifyEventManager:
                     self._sensor_schedules[key] = _ScheduledEvent(
                         self.hass,
                         delay,
-                        lambda s=block_ended_sensor: s.async_write_ha_state(),
+                        block_ended_sensor.async_write_ha_state,
                     )
                     _LOGGER.debug(
                         "Scheduled block_ended ON at %s (delay %.1fs)", last_class.end_time, delay
@@ -408,7 +410,7 @@ class WodifyEventManager:
                     self._sensor_schedules[key] = _ScheduledEvent(
                         self.hass,
                         delay,
-                        lambda s=block_ended_sensor: s.async_write_ha_state(),
+                        block_ended_sensor.async_write_ha_state,
                     )
                     _LOGGER.debug("Scheduled block_ended OFF at %s (delay %.1fs)", off_time, delay)
 
@@ -422,7 +424,7 @@ class WodifyEventManager:
                     self._sensor_schedules[key] = _ScheduledEvent(
                         self.hass,
                         delay,
-                        lambda s=class_ongoing_sensor: s.async_write_ha_state(),
+                        class_ongoing_sensor.async_write_ha_state,
                     )
                     _LOGGER.debug(
                         "Scheduled class_ongoing ON at %s (delay %.1fs)",
@@ -437,7 +439,7 @@ class WodifyEventManager:
                     self._sensor_schedules[key] = _ScheduledEvent(
                         self.hass,
                         delay,
-                        lambda s=class_ongoing_sensor: s.async_write_ha_state(),
+                        class_ongoing_sensor.async_write_ha_state,
                     )
                     _LOGGER.debug(
                         "Scheduled class_ongoing OFF at %s (delay %.1fs)",

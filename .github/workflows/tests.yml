@@ -76,4 +76,3 @@ jobs:
 
       - name: Run mypy
         run: mypy custom_components/wodify --ignore-missing-imports
-        continue-on-error: true

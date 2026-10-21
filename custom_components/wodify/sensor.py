@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import datetime
 
 from homeassistant.components.sensor import SensorEntity
@@ -395,7 +396,7 @@ class WodifySettingsSensor(SensorEntity):
         unique_source = config_entry.unique_id or config_entry.entry_id
         self._attr_unique_id = f"{unique_source}_settings"
         # Listen for config entry updates
-        self._unsub_update: object | None = None
+        self._unsub_update: Callable[[], None] | None = None
 
     async def async_added_to_hass(self) -> None:
         """Register update listener when added to hass."""

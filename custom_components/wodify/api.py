@@ -84,7 +84,8 @@ class WodifyAPI:
         Returns None if the class is not found.
         """
         try:
-            return await self._make_request(f"classes/{class_id}")
+            data: dict[str, Any] = await self._make_request(f"classes/{class_id}")
+            return data
         except ApiError as err:
             if "404" in str(err):
                 return None
