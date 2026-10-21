@@ -10,6 +10,7 @@ from homeassistant.components.binary_sensor import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import dt as dt_util
@@ -19,10 +20,9 @@ from .const import (
     CONF_BEFORE_CLASS_MINUTES,
     DEFAULT_AFTER_BLOCK_MINUTES,
     DEFAULT_BEFORE_CLASS_MINUTES,
-    DOMAIN,
 )
 from .coordinator import WodifyDataUpdateCoordinator, detect_class_blocks
-from .models import WodifyClass, WodifyConfigEntry
+from .models import WodifyClass, WodifyConfigEntry, wodify_device_info
 
 PARALLEL_UPDATES = 0
 
@@ -130,13 +130,8 @@ class WodifyClassOngoingBinarySensor(
         return "mdi:timer" if self.is_on else "mdi:timer-off"
 
     @property
-    def device_info(self) -> dict[str, object]:
-        return {
-            "identifiers": {(DOMAIN, self._config_entry.entry_id)},
-            "name": "Wodify",
-            "manufacturer": "Wodify",
-            "model": "Gym Schedule",
-        }
+    def device_info(self) -> DeviceInfo:
+        return wodify_device_info(self._config_entry)
 
 
 class WodifyClassStartingSoonBinarySensor(
@@ -231,13 +226,8 @@ class WodifyClassStartingSoonBinarySensor(
         return "mdi:timer" if self.is_on else "mdi:timer-off"
 
     @property
-    def device_info(self) -> dict[str, object]:
-        return {
-            "identifiers": {(DOMAIN, self._config_entry.entry_id)},
-            "name": "Wodify",
-            "manufacturer": "Wodify",
-            "model": "Gym Schedule",
-        }
+    def device_info(self) -> DeviceInfo:
+        return wodify_device_info(self._config_entry)
 
 
 class WodifyBlockStartingSoonBinarySensor(
@@ -276,9 +266,7 @@ class WodifyBlockStartingSoonBinarySensor(
         if not self.coordinator.data:
             return None
         now = dt_util.now()
-        blocks = detect_class_blocks(
-            self.coordinator.data, self.coordinator.block_gap_minutes
-        )
+        blocks = detect_class_blocks(self.coordinator.data, self.coordinator.block_gap_minutes)
 
         for block in blocks:
             if not block:
@@ -294,9 +282,7 @@ class WodifyBlockStartingSoonBinarySensor(
         if not self.coordinator.data:
             return False
         now = dt_util.now()
-        blocks = detect_class_blocks(
-            self.coordinator.data, self.coordinator.block_gap_minutes
-        )
+        blocks = detect_class_blocks(self.coordinator.data, self.coordinator.block_gap_minutes)
 
         for block in blocks:
             if not block:
@@ -371,13 +357,8 @@ class WodifyBlockStartingSoonBinarySensor(
         return "mdi:timer" if self.is_on else "mdi:timer-off"
 
     @property
-    def device_info(self) -> dict[str, object]:
-        return {
-            "identifiers": {(DOMAIN, self._config_entry.entry_id)},
-            "name": "Wodify",
-            "manufacturer": "Wodify",
-            "model": "Gym Schedule",
-        }
+    def device_info(self) -> DeviceInfo:
+        return wodify_device_info(self._config_entry)
 
 
 class WodifyBlockJustEndedBinarySensor(
@@ -414,9 +395,7 @@ class WodifyBlockJustEndedBinarySensor(
         if not self.coordinator.data:
             return None
         now = dt_util.now()
-        blocks = detect_class_blocks(
-            self.coordinator.data, self.coordinator.block_gap_minutes
-        )
+        blocks = detect_class_blocks(self.coordinator.data, self.coordinator.block_gap_minutes)
 
         # Find blocks that ended recently (within after_minutes)
         for block in reversed(blocks):
@@ -484,10 +463,5 @@ class WodifyBlockJustEndedBinarySensor(
         return "mdi:timer" if self.is_on else "mdi:timer-off"
 
     @property
-    def device_info(self) -> dict[str, object]:
-        return {
-            "identifiers": {(DOMAIN, self._config_entry.entry_id)},
-            "name": "Wodify",
-            "manufacturer": "Wodify",
-            "model": "Gym Schedule",
-        }
+    def device_info(self) -> DeviceInfo:
+        return wodify_device_info(self._config_entry)

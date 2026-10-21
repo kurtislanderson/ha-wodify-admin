@@ -28,6 +28,32 @@ class ApiAuthError(ApiError):
     """Raised when authentication with the Wodify API fails."""
 
 
+class ApiErrorBody(ApiError):
+    """Raised when Wodify answers HTTP 200 with a non-auth error body."""
+
+
+def _raise_for_error_body(payload: Any) -> None:
+    """Wodify can answer HTTP 200 with an error body carrying its own HTTPCode."""
+    if not isinstance(payload, dict):
+        return
+    try:
+        code = int(payload["HTTPCode"])
+    except (KeyError, TypeError, ValueError):
+        return
+    if code < 400:
+        return
+    detail = next(
+        (
+            str(payload[k])
+            for k in ("MoreInfo", "UserMessage", "DeveloperMessage")
+            if payload.get(k)
+        ),
+        "Unknown error",
+    )
+    exc = ApiAuthError if code in (401, 403) else ApiErrorBody
+    raise exc(f"{detail} (HTTP {code})")
+
+
 class WodifyAPI:
     """Small async API wrapper used by the tests and coordinator."""
 
@@ -174,7 +200,12 @@ class WodifyAPI:
             )
 
             await self._apply_rate_limit()
-            payload = await self._execute_request(url)
+            try:
+                payload = await self._execute_request(url)
+            except ApiErrorBody as err:
+                # Keep earlier pages; auth errors still propagate to trigger reauth.
+                _LOGGER.warning("Search API error: %s", err)
+                break
 
             if not isinstance(payload, dict):
                 break
@@ -342,13 +373,15 @@ class WodifyAPI:
                     text = await resp.text()
                     raise ApiError(f"Error {resp.status}: {text}")
                 try:
-                    return await resp.json()
+                    payload = await resp.json()
                 except aiohttp.ContentTypeError as err:
                     raise ApiError(f"Failed to parse response: {err}") from err
                 except ValueError as err:
                     raise ApiError(f"Failed to parse response: {err}") from err
+                _raise_for_error_body(payload)
+                return payload
         except TimeoutError as err:
             raise ApiError(f"Request timeout after {API_TIMEOUT} seconds") from err
 
 
-__all__ = ["ApiAuthError", "ApiError", "WodifyAPI"]
+__all__ = ["ApiAuthError", "ApiError", "ApiErrorBody", "WodifyAPI"]

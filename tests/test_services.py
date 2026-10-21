@@ -64,13 +64,14 @@ class TestServices:
 
         await async_setup_services(hass)
 
-        with pytest.raises(ServiceValidationError, match="Config entry not found"):
+        with pytest.raises(ServiceValidationError) as exc_info:
             await hass.services.async_call(
                 DOMAIN,
                 "refresh_now",
                 {"entry_id": "invalid_id"},
                 blocking=True,
             )
+        assert exc_info.value.translation_key == "entry_not_found"
 
     async def test_set_filter_service(self, hass, mock_integration_setup):
         """Test set filter service."""
@@ -108,7 +109,7 @@ class TestServices:
         await async_setup_services(hass)
 
         # Should raise error for empty locations
-        with pytest.raises(ServiceValidationError, match="At least one location"):
+        with pytest.raises(ServiceValidationError) as exc_info:
             await hass.services.async_call(
                 DOMAIN,
                 "set_filter",
@@ -119,9 +120,10 @@ class TestServices:
                 },
                 blocking=True,
             )
+        assert exc_info.value.translation_key == "no_locations"
 
         # Should raise error for empty programs
-        with pytest.raises(ServiceValidationError, match="At least one program"):
+        with pytest.raises(ServiceValidationError) as exc_info:
             await hass.services.async_call(
                 DOMAIN,
                 "set_filter",
@@ -132,6 +134,7 @@ class TestServices:
                 },
                 blocking=True,
             )
+        assert exc_info.value.translation_key == "no_programs"
 
     async def test_set_event_timing_service(self, hass, mock_integration_setup):
         """Test set event timing service."""
@@ -165,7 +168,7 @@ class TestServices:
         await async_setup_services(hass)
 
         # Test invalid before_class_minutes (too low)
-        with pytest.raises(ServiceValidationError, match="before_class_minutes must be between"):
+        with pytest.raises(ServiceValidationError) as exc_info:
             await hass.services.async_call(
                 DOMAIN,
                 "set_event_timing",
@@ -176,9 +179,10 @@ class TestServices:
                 },
                 blocking=True,
             )
+        assert exc_info.value.translation_key == "invalid_before_minutes"
 
         # Test invalid after_block_minutes (too high)
-        with pytest.raises(ServiceValidationError, match="after_block_minutes must be between"):
+        with pytest.raises(ServiceValidationError) as exc_info:
             await hass.services.async_call(
                 DOMAIN,
                 "set_event_timing",
@@ -189,6 +193,7 @@ class TestServices:
                 },
                 blocking=True,
             )
+        assert exc_info.value.translation_key == "invalid_after_minutes"
 
     async def test_service_with_multiple_entries(self, hass):
         """Test service with multiple config entries."""

@@ -34,7 +34,7 @@ jobs:
       - name: Create release zip
         run: |
           cd custom_components
-          zip -r ../wodify.zip wodify
+          zip -r ../wodify.zip wodify -x '*/__pycache__/*' '*.pyc'
 
       - name: Upload release asset
         uses: softprops/action-gh-release@v1

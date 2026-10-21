@@ -7,13 +7,13 @@ from datetime import datetime
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import dt as dt_util
 
-from .const import DOMAIN
 from .coordinator import WodifyDataUpdateCoordinator
-from .models import WodifyClass, WodifyConfigEntry
+from .models import WodifyClass, WodifyConfigEntry, wodify_device_info
 
 _ICON = "mdi:weight-lifter"
 
@@ -126,13 +126,8 @@ class WodifyNextClassSensor(CoordinatorEntity[WodifyDataUpdateCoordinator], Sens
         return attributes
 
     @property
-    def device_info(self) -> dict[str, object]:
-        return {
-            "identifiers": {(DOMAIN, self._config_entry.entry_id)},
-            "name": "Wodify",
-            "manufacturer": "Wodify",
-            "model": "Gym Schedule",
-        }
+    def device_info(self) -> DeviceInfo:
+        return wodify_device_info(self._config_entry)
 
 
 class WodifyCurrentClassSensor(CoordinatorEntity[WodifyDataUpdateCoordinator], SensorEntity):
@@ -227,13 +222,8 @@ class WodifyCurrentClassSensor(CoordinatorEntity[WodifyDataUpdateCoordinator], S
         return attributes
 
     @property
-    def device_info(self) -> dict[str, object]:
-        return {
-            "identifiers": {(DOMAIN, self._config_entry.entry_id)},
-            "name": "Wodify",
-            "manufacturer": "Wodify",
-            "model": "Gym Schedule",
-        }
+    def device_info(self) -> DeviceInfo:
+        return wodify_device_info(self._config_entry)
 
 
 class WodifyApiStatusSensor(CoordinatorEntity[WodifyDataUpdateCoordinator], SensorEntity):
@@ -286,13 +276,8 @@ class WodifyApiStatusSensor(CoordinatorEntity[WodifyDataUpdateCoordinator], Sens
         return attributes
 
     @property
-    def device_info(self) -> dict[str, object]:
-        return {
-            "identifiers": {(DOMAIN, self._config_entry.entry_id)},
-            "name": "Wodify",
-            "manufacturer": "Wodify",
-            "model": "Gym Schedule",
-        }
+    def device_info(self) -> DeviceInfo:
+        return wodify_device_info(self._config_entry)
 
 
 class WodifyTodaysClassesSensor(CoordinatorEntity[WodifyDataUpdateCoordinator], SensorEntity):
@@ -394,13 +379,8 @@ class WodifyTodaysClassesSensor(CoordinatorEntity[WodifyDataUpdateCoordinator], 
         return attributes
 
     @property
-    def device_info(self) -> dict[str, object]:
-        return {
-            "identifiers": {(DOMAIN, self._config_entry.entry_id)},
-            "name": "Wodify",
-            "manufacturer": "Wodify",
-            "model": "Gym Schedule",
-        }
+    def device_info(self) -> DeviceInfo:
+        return wodify_device_info(self._config_entry)
 
 
 class WodifySettingsSensor(SensorEntity):
@@ -460,10 +440,5 @@ class WodifySettingsSensor(SensorEntity):
         }
 
     @property
-    def device_info(self) -> dict[str, object]:
-        return {
-            "identifiers": {(DOMAIN, self._config_entry.entry_id)},
-            "name": "Wodify",
-            "manufacturer": "Wodify",
-            "model": "Gym Schedule",
-        }
+    def device_info(self) -> DeviceInfo:
+        return wodify_device_info(self._config_entry)

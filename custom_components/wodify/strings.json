@@ -187,6 +187,9 @@
     }
   },
   "exceptions": {
+    "entry_id_required": {
+      "message": "entry_id is required"
+    },
     "entry_not_found": {
       "message": "Config entry {entry_id} not found"
     },

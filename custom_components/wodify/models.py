@@ -9,6 +9,9 @@ from typing import TYPE_CHECKING, Any, Self
 from zoneinfo import ZoneInfo
 
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.helpers.device_registry import DeviceInfo
+
+from .const import DOMAIN
 
 if TYPE_CHECKING:
     from .api import WodifyAPI
@@ -34,6 +37,16 @@ class WodifyRuntimeData:
 
 
 WodifyConfigEntry = ConfigEntry[WodifyRuntimeData]
+
+
+def wodify_device_info(entry: ConfigEntry) -> DeviceInfo:
+    """Device shared by every Wodify entity of a config entry."""
+    return DeviceInfo(
+        identifiers={(DOMAIN, entry.entry_id)},
+        name="Wodify",
+        manufacturer="Wodify",
+        model="Gym Schedule",
+    )
 
 
 def _ensure_timezone(dt: datetime, tz: ZoneInfo | None = None) -> datetime:

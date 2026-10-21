@@ -5,11 +5,11 @@ from __future__ import annotations
 from homeassistant.components.button import ButtonEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN
 from .coordinator import WodifyDataUpdateCoordinator
-from .models import WodifyConfigEntry
+from .models import WodifyConfigEntry, wodify_device_info
 
 PARALLEL_UPDATES = 0
 
@@ -42,10 +42,5 @@ class WodifyRefreshButton(ButtonEntity):
         await self._coordinator.async_request_refresh()
 
     @property
-    def device_info(self) -> dict[str, object]:
-        return {
-            "identifiers": {(DOMAIN, self._config_entry.entry_id)},
-            "name": "Wodify",
-            "manufacturer": "Wodify",
-            "model": "Gym Schedule",
-        }
+    def device_info(self) -> DeviceInfo:
+        return wodify_device_info(self._config_entry)

@@ -374,7 +374,9 @@ automation:
 
 ### Example: Email a staff list
 
-`config_entry_id()` finds the entry from any Wodify entity.
+`config_entry_id()` finds the entry from any Wodify entity. Entity IDs vary by install
+(for example `sensor.api_status` instead of `sensor.wodify_api_status`), so check yours
+under Settings → Devices & services → Wodify.
 
 ```yaml
 send_wodify_staff_email:

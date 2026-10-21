@@ -8,13 +8,13 @@ from datetime import datetime
 from homeassistant.components.calendar import CalendarEntity, CalendarEvent
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import dt as dt_util
 
-from .const import DOMAIN
 from .coordinator import WodifyDataUpdateCoordinator
-from .models import WodifyClass, WodifyConfigEntry
+from .models import WodifyClass, WodifyConfigEntry, wodify_device_info
 
 PARALLEL_UPDATES = 0
 
@@ -111,8 +111,5 @@ class WodifyCalendar(CoordinatorEntity[WodifyDataUpdateCoordinator], CalendarEnt
         return []
 
     @property
-    def device_info(self) -> dict[str, object]:
-        return {
-            "identifiers": {(DOMAIN, self._config_entry.entry_id)},
-            "name": "Wodify",
-        }
+    def device_info(self) -> DeviceInfo:
+        return wodify_device_info(self._config_entry)

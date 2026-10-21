@@ -34,7 +34,11 @@ _SERVICE_FLAG = "services_registered"
 def _get_runtime(hass: HomeAssistant, entry_id: str) -> WodifyRuntimeData:
     entry = hass.config_entries.async_get_entry(entry_id)
     if entry is None or entry.domain != DOMAIN or entry.state is not ConfigEntryState.LOADED:
-        raise ServiceValidationError("Config entry not found")
+        raise ServiceValidationError(
+            translation_domain=DOMAIN,
+            translation_key="entry_not_found",
+            translation_placeholders={"entry_id": entry_id},
+        )
     runtime: WodifyRuntimeData = entry.runtime_data
     return runtime
 
@@ -42,7 +46,7 @@ def _get_runtime(hass: HomeAssistant, entry_id: str) -> WodifyRuntimeData:
 async def _async_handle_refresh(hass: HomeAssistant, call: ServiceCall) -> None:
     entry_id = call.data.get("entry_id")
     if not entry_id:
-        raise ServiceValidationError("entry_id is required")
+        raise ServiceValidationError(translation_domain=DOMAIN, translation_key="entry_id_required")
     runtime = _get_runtime(hass, entry_id)
     await runtime.coordinator.async_request_refresh()
 
@@ -50,21 +54,25 @@ async def _async_handle_refresh(hass: HomeAssistant, call: ServiceCall) -> None:
 async def _async_handle_set_filter(hass: HomeAssistant, call: ServiceCall) -> None:
     entry_id = call.data.get("entry_id")
     if not entry_id:
-        raise ServiceValidationError("entry_id is required")
+        raise ServiceValidationError(translation_domain=DOMAIN, translation_key="entry_id_required")
 
     locations = call.data.get(CONF_LOCATIONS)
     programs = call.data.get(CONF_PROGRAMS)
     if not locations:
-        raise ServiceValidationError("At least one location must be provided")
+        raise ServiceValidationError(translation_domain=DOMAIN, translation_key="no_locations")
     if not programs:
-        raise ServiceValidationError("At least one program must be provided")
+        raise ServiceValidationError(translation_domain=DOMAIN, translation_key="no_programs")
 
     runtime = _get_runtime(hass, entry_id)
     await runtime.coordinator.async_set_filters(list(locations), list(programs))
 
     config_entry = hass.config_entries.async_get_entry(entry_id)
     if config_entry is None:
-        raise ServiceValidationError("Config entry not found")
+        raise ServiceValidationError(
+            translation_domain=DOMAIN,
+            translation_key="entry_not_found",
+            translation_placeholders={"entry_id": entry_id},
+        )
 
     hass.config_entries.async_update_entry(
         config_entry,
@@ -79,18 +87,22 @@ async def _async_handle_set_filter(hass: HomeAssistant, call: ServiceCall) -> No
 async def _async_handle_set_event_timing(hass: HomeAssistant, call: ServiceCall) -> None:
     entry_id = call.data.get("entry_id")
     if not entry_id:
-        raise ServiceValidationError("entry_id is required")
+        raise ServiceValidationError(translation_domain=DOMAIN, translation_key="entry_id_required")
 
     before_minutes = int(call.data.get(CONF_BEFORE_CLASS_MINUTES, DEFAULT_BEFORE_CLASS_MINUTES))
     after_minutes = int(call.data.get(CONF_AFTER_BLOCK_MINUTES, DEFAULT_AFTER_BLOCK_MINUTES))
 
     if not (MIN_EVENT_MINUTES <= before_minutes <= MAX_EVENT_MINUTES):
         raise ServiceValidationError(
-            f"before_class_minutes must be between {MIN_EVENT_MINUTES} and {MAX_EVENT_MINUTES}"
+            translation_domain=DOMAIN,
+            translation_key="invalid_before_minutes",
+            translation_placeholders={"min": str(MIN_EVENT_MINUTES), "max": str(MAX_EVENT_MINUTES)},
         )
     if not (MIN_EVENT_MINUTES <= after_minutes <= MAX_EVENT_MINUTES):
         raise ServiceValidationError(
-            f"after_block_minutes must be between {MIN_EVENT_MINUTES} and {MAX_EVENT_MINUTES}"
+            translation_domain=DOMAIN,
+            translation_key="invalid_after_minutes",
+            translation_placeholders={"min": str(MIN_EVENT_MINUTES), "max": str(MAX_EVENT_MINUTES)},
         )
 
     runtime = _get_runtime(hass, entry_id)
@@ -98,7 +110,11 @@ async def _async_handle_set_event_timing(hass: HomeAssistant, call: ServiceCall)
 
     config_entry = hass.config_entries.async_get_entry(entry_id)
     if config_entry is None:
-        raise ServiceValidationError("Config entry not found")
+        raise ServiceValidationError(
+            translation_domain=DOMAIN,
+            translation_key="entry_not_found",
+            translation_placeholders={"entry_id": entry_id},
+        )
 
     new_options = dict(config_entry.options)
     new_options.setdefault(CONF_UPDATE_INTERVAL, DEFAULT_UPDATE_INTERVAL)
