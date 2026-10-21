@@ -1,11 +1,6 @@
 {
   "domain": "wodify",
   "name": "Wodify",
-  "categories": [
-    "productivity_information.calendars_todos",
-    "messaging_notifications.email_sms_calls",
-    "health_wellbeing"
-  ],
   "codeowners": [
     "@kurtislanderson"
   ],
