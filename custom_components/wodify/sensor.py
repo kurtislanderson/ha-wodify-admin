@@ -7,12 +7,14 @@ from datetime import datetime
 
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import dt as dt_util
 
+from .const import CONF_LOCATIONS, CONF_PROGRAMS
 from .coordinator import WodifyDataUpdateCoordinator
 from .models import WodifyClass, WodifyConfigEntry, wodify_device_info
 
@@ -45,8 +47,8 @@ class WodifyNextClassSensor(CoordinatorEntity[WodifyDataUpdateCoordinator], Sens
     """Sensor representing the next upcoming class."""
 
     _attr_icon = _ICON
-    _attr_should_poll = False
-    _attr_name = "Next Class"
+    _attr_has_entity_name = True
+    _attr_translation_key = "next_class"
 
     def __init__(self, coordinator: WodifyDataUpdateCoordinator, config_entry: ConfigEntry) -> None:
         super().__init__(coordinator)
@@ -135,8 +137,8 @@ class WodifyCurrentClassSensor(CoordinatorEntity[WodifyDataUpdateCoordinator], S
     """Sensor showing the current ongoing class or 'No class'."""
 
     _attr_icon = _ICON
-    _attr_should_poll = False
-    _attr_name = "Current Class"
+    _attr_has_entity_name = True
+    _attr_translation_key = "current_class"
 
     def __init__(self, coordinator: WodifyDataUpdateCoordinator, config_entry: ConfigEntry) -> None:
         super().__init__(coordinator)
@@ -161,9 +163,9 @@ class WodifyCurrentClassSensor(CoordinatorEntity[WodifyDataUpdateCoordinator], S
         return None
 
     @property
-    def native_value(self) -> str:
+    def native_value(self) -> str | None:
         if not self.available:
-            return "Unavailable"
+            return None
 
         current_class = self._current_class()
         if not current_class:
@@ -230,8 +232,9 @@ class WodifyCurrentClassSensor(CoordinatorEntity[WodifyDataUpdateCoordinator], S
 class WodifyApiStatusSensor(CoordinatorEntity[WodifyDataUpdateCoordinator], SensorEntity):
     """Sensor showing Wodify API connection status."""
 
-    _attr_should_poll = False
-    _attr_name = "API Status"
+    _attr_has_entity_name = True
+    _attr_translation_key = "api_status"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
 
     def __init__(self, coordinator: WodifyDataUpdateCoordinator, config_entry: ConfigEntry) -> None:
         super().__init__(coordinator)
@@ -285,8 +288,8 @@ class WodifyTodaysClassesSensor(CoordinatorEntity[WodifyDataUpdateCoordinator], 
     """Sensor showing all classes scheduled for today."""
 
     _attr_icon = "mdi:calendar-today"
-    _attr_should_poll = False
-    _attr_name = "Today's Classes"
+    _attr_has_entity_name = True
+    _attr_translation_key = "todays_classes"
 
     def __init__(self, coordinator: WodifyDataUpdateCoordinator, config_entry: ConfigEntry) -> None:
         super().__init__(coordinator)
@@ -314,9 +317,9 @@ class WodifyTodaysClassesSensor(CoordinatorEntity[WodifyDataUpdateCoordinator], 
         return sorted(classes, key=lambda c: c.start_time)
 
     @property
-    def native_value(self) -> str:
+    def native_value(self) -> str | None:
         if not self.available:
-            return "Unavailable"
+            return None
 
         classes = self._todays_classes()
         count = len(classes)
@@ -389,7 +392,9 @@ class WodifySettingsSensor(SensorEntity):
 
     _attr_icon = "mdi:cog"
     _attr_should_poll = False
-    _attr_name = "Settings"
+    _attr_has_entity_name = True
+    _attr_translation_key = "settings"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
 
     def __init__(self, config_entry: ConfigEntry) -> None:
         self._config_entry = config_entry
@@ -436,8 +441,8 @@ class WodifySettingsSensor(SensorEntity):
             "update_interval_minutes": options.get("update_interval", 5),
             "before_class_minutes": options.get("before_class_minutes", 15),
             "after_block_minutes": options.get("after_block_minutes", 15),
-            "locations": data.get("locations", []),
-            "programs": data.get("programs", []),
+            CONF_LOCATIONS: options.get(CONF_LOCATIONS, data.get(CONF_LOCATIONS, [])),
+            CONF_PROGRAMS: options.get(CONF_PROGRAMS, data.get(CONF_PROGRAMS, [])),
         }
 
     @property

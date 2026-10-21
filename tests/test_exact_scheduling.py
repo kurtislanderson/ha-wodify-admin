@@ -76,19 +76,19 @@ async def test_class_starting_soon_flips_at_exactly_15_minutes(
         await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
 
-        assert hass.states.get("binary_sensor.class_starting_soon").state == "off"
+        assert hass.states.get("binary_sensor.wodify_class_starting_soon").state == "off"
 
         # T-15:01 — still outside the window.
         freezer.move_to(start - timedelta(minutes=15, seconds=1))
         async_fire_time_changed(hass)
         await hass.async_block_till_done()
-        assert hass.states.get("binary_sensor.class_starting_soon").state == "off"
+        assert hass.states.get("binary_sensor.wodify_class_starting_soon").state == "off"
 
         # T-15:00 exactly — the scheduled write must land here.
         freezer.move_to(start - timedelta(minutes=15))
         async_fire_time_changed(hass)
         await hass.async_block_till_done()
-        assert hass.states.get("binary_sensor.class_starting_soon").state == "on", (
+        assert hass.states.get("binary_sensor.wodify_class_starting_soon").state == "on", (
             "sensor did not flip at T-15:00 — exact-time scheduling is broken, "
             "state is only tracking the coordinator poll"
         )
@@ -97,7 +97,7 @@ async def test_class_starting_soon_flips_at_exactly_15_minutes(
         freezer.move_to(start)
         async_fire_time_changed(hass)
         await hass.async_block_till_done()
-        assert hass.states.get("binary_sensor.class_starting_soon").state == "off"
+        assert hass.states.get("binary_sensor.wodify_class_starting_soon").state == "off"
 
         await hass.config_entries.async_unload(entry.entry_id)
         await hass.async_block_till_done()

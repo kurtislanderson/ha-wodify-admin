@@ -69,7 +69,7 @@ class TestCalendar:
         calendar = WodifyCalendar(mock_coordinator, mock_config_entry)
 
         assert calendar.unique_id == "test_api_key_calendar"
-        assert calendar.name == "Classes"
+        assert calendar.translation_key == "classes"
         assert calendar.should_poll is False
         assert calendar.available is True
 
@@ -157,15 +157,6 @@ class TestCalendar:
         assert all(
             event.start.date() == datetime(2024, 1, 1, tzinfo=UTC).date() for event in events
         )
-
-    async def test_calendar_returns_empty_task_list(
-        self, hass, mock_coordinator, mock_config_entry
-    ):
-        """Test calendar returns empty task list to hide todo UI."""
-        calendar = WodifyCalendar(mock_coordinator, mock_config_entry)
-
-        tasks = await calendar.async_get_tasks(hass)
-        assert tasks == []
 
     async def test_calendar_event_description_formats(
         self, hass, mock_coordinator, mock_config_entry
@@ -310,4 +301,46 @@ class TestCalendar:
         # UIDs should be consistent between calls
         for e1, e2 in zip(events1, events2, strict=False):
             assert e1.uid == e2.uid
-            assert e1.uid == f"wodify_class_{e1.start.strftime('%Y%m%d%H%M')}"
+        assert [e.uid for e in events1] == [f"wodify_class_{c}" for c in ("1", "2", "3")]
+
+    async def test_calendar_returns_in_progress_class(
+        self, hass, mock_coordinator, mock_config_entry, calendar_test_data
+    ):
+        """A class that started before the window but ends inside it is returned."""
+        mock_coordinator.data = calendar_test_data
+        calendar = WodifyCalendar(mock_coordinator, mock_config_entry)
+
+        events = await calendar.async_get_events(
+            hass,
+            datetime(2024, 1, 1, 6, 30, tzinfo=UTC),
+            datetime(2024, 1, 1, 8, 0, tzinfo=UTC),
+        )
+
+        assert [e.summary for e in events] == ["Morning CrossFit - Coach Mike"]
+
+    async def test_calendar_parallel_classes_have_distinct_uids(
+        self, hass, mock_coordinator, mock_config_entry, calendar_test_data
+    ):
+        """Two classes with the same start time must not share a uid."""
+        first = calendar_test_data[0]
+        twin = WodifyClass(
+            id="99",
+            name="Parallel Yoga",
+            start_time=first.start_time,
+            end_time=first.end_time,
+            coach_name="Coach Sarah",
+            location_name="Uptown",
+            program_name="Yoga",
+            max_attendees=15,
+            current_attendees=3,
+        )
+        mock_coordinator.data = [first, twin]
+        calendar = WodifyCalendar(mock_coordinator, mock_config_entry)
+
+        events = await calendar.async_get_events(
+            hass,
+            datetime(2024, 1, 1, 0, 0, tzinfo=UTC),
+            datetime(2024, 1, 2, 0, 0, tzinfo=UTC),
+        )
+
+        assert len({e.uid for e in events}) == 2

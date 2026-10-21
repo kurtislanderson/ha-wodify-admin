@@ -104,17 +104,17 @@ class TestIntegration:
         assert mock_config_entry.state == ConfigEntryState.LOADED
 
         # Verify entities are created
-        state = hass.states.get("sensor.next_class")
+        state = hass.states.get("sensor.wodify_next_class")
         assert state is not None
         assert state.state != STATE_UNAVAILABLE
         assert "Morning CrossFit" in state.state
 
-        state = hass.states.get("binary_sensor.class_ongoing")
+        state = hass.states.get("binary_sensor.wodify_class_ongoing")
         assert state is not None
         assert state.state == "off"  # No class ongoing
 
         # Calendar platform is also loaded
-        state = hass.states.get("calendar.classes")
+        state = hass.states.get("calendar.wodify_classes")
         assert state is not None
 
     async def test_reload_entry(
@@ -131,7 +131,7 @@ class TestIntegration:
         await hass.async_block_till_done()
 
         # Get initial state
-        old_state = hass.states.get("sensor.next_class")
+        old_state = hass.states.get("sensor.wodify_next_class")
         assert old_state is not None
 
         # Reload
@@ -139,7 +139,7 @@ class TestIntegration:
         await hass.async_block_till_done()
 
         # Verify still working
-        new_state = hass.states.get("sensor.next_class")
+        new_state = hass.states.get("sensor.wodify_next_class")
         assert new_state is not None
         assert new_state.state != STATE_UNAVAILABLE
 
@@ -156,18 +156,17 @@ class TestIntegration:
         await hass.async_block_till_done()
 
         # Verify entities exist
-        assert hass.states.get("sensor.next_class") is not None
+        assert hass.states.get("sensor.wodify_next_class") is not None
 
         # Unload
         await hass.config_entries.async_unload(mock_config_entry.entry_id)
         await hass.async_block_till_done()
 
         # Entity state becomes unavailable but entity remains in registry
-        state = hass.states.get("sensor.next_class")
+        state = hass.states.get("sensor.wodify_next_class")
         # State may be unavailable or None depending on HA version
         if state is not None:
             assert state.state == STATE_UNAVAILABLE
-
 
     async def test_entity_registry_cleanup(self, hass, mock_config_entry, mock_api_responses):
         """Test entity registry is properly cleaned up."""
@@ -177,7 +176,7 @@ class TestIntegration:
         ent_reg = er.async_get(hass)
 
         # Verify entities are registered
-        sensor_entity = ent_reg.async_get("sensor.next_class")
+        sensor_entity = ent_reg.async_get("sensor.wodify_next_class")
         assert sensor_entity is not None
 
         # Remove entry
@@ -185,7 +184,7 @@ class TestIntegration:
         await hass.async_block_till_done()
 
         # Verify entities are removed from registry
-        sensor_entity = ent_reg.async_get("sensor.next_class")
+        sensor_entity = ent_reg.async_get("sensor.wodify_next_class")
         assert sensor_entity is None
 
     async def test_coordinator_updates_entities(self, hass, mock_config_entry, mock_api_responses):
@@ -213,7 +212,7 @@ class TestIntegration:
         await hass.async_block_till_done()
 
         # Verify entity updated
-        state = hass.states.get("sensor.next_class")
+        state = hass.states.get("sensor.wodify_next_class")
         assert "New Class" in state.state
 
     async def test_coordinator_refresh_reschedules_events(
@@ -426,10 +425,7 @@ class TestIntegration:
         assert entry2.state == ConfigEntryState.LOADED
 
         # Verify separate coordinators
-        assert (
-            entry1.runtime_data.coordinator
-            != entry2.runtime_data.coordinator
-        )
+        assert entry1.runtime_data.coordinator != entry2.runtime_data.coordinator
 
         # Verify entities have unique IDs
         ent_reg = er.async_get(hass)

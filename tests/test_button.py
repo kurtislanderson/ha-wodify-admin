@@ -20,7 +20,7 @@ class TestRefreshButton:
         button = WodifyRefreshButton(mock_coordinator, mock_config_entry)
 
         assert button.unique_id == "test_api_key_refresh"
-        assert button.name == "Refresh"
+        assert button.translation_key == "refresh"
         assert button.icon == "mdi:refresh"
 
     async def test_button_press(

@@ -80,6 +80,8 @@ On Home Assistant 2026.11+, HACS is built in as the Marketplace.
    - **Pre-class trigger**: Minutes before class to turn on the Pre-Class Trigger sensor (5-60, default: 15)
    - **Post-block trigger**: Minutes after block ends to turn on the Post-Block Trigger sensor (5-60, default: 15)
 
+Only one Wodify entry is allowed per Home Assistant instance.
+
 ### Options
 
 You can adjust settings at any time through the integration options:
@@ -89,7 +91,17 @@ You can adjust settings at any time through the integration options:
 4. Toggle **Exclude Private Training** to hide/show private training sessions
 5. Changes take effect immediately
 
+### Diagnostics
+
+Download diagnostics from the Wodify integration page (three-dot menu, **Download diagnostics**).
+The API key is redacted.
+
 ## Entities
+
+Entity IDs are `sensor.wodify_*`, `binary_sensor.wodify_*`, etc. on new installs, and
+friendly names are prefixed with the device name ("Wodify Next class"). Existing installs
+keep their current entity IDs (for example CFIL's `sensor.api_status`); only the friendly
+names change. API status and Settings are diagnostic entities, and Refresh is a config entity.
 
 ### Sensors
 
@@ -142,7 +154,7 @@ You can adjust settings at any time through the integration options:
   - `count_towards_attendance_limits`: Whether class counts toward limits
 
 #### Today's Classes Sensor
-- **Entity ID**: `sensor.wodify_todays_classes`
+- **Entity ID**: `sensor.wodify_today_s_classes`
 - **State**: Count of classes today (e.g., "3 classes today" or "No classes today")
 - **Attributes**:
   - `class_count`: Number of classes scheduled
@@ -208,7 +220,7 @@ All binary sensors use **precise time-based scheduling** to trigger at exact tim
   - `class_start_time`: ISO formatted start time
 
 #### Class Block Starting Soon
-- **Entity ID**: `binary_sensor.wodify_block_starting_soon`
+- **Entity ID**: `binary_sensor.wodify_class_block_starting_soon`
 - **State**: ON within the trigger window before the FIRST class of a block only, OFF otherwise
 - **Device Class**: `occupancy`
 - **Icon**: `mdi:timer` (on) / `mdi:timer-off` (off)
@@ -225,7 +237,7 @@ All binary sensors use **precise time-based scheduling** to trigger at exact tim
   - `block_start_time`: ISO formatted start time
 
 #### Class Block Just Ended
-- **Entity ID**: `binary_sensor.wodify_block_just_ended`
+- **Entity ID**: `binary_sensor.wodify_class_block_just_ended`
 - **State**: ON for the configured trigger window after a class block ends, OFF otherwise
 - **Device Class**: `occupancy`
 - **Icon**: `mdi:timer` (on) / `mdi:timer-off` (off)
@@ -326,7 +338,7 @@ automation:
   - alias: "Gym Pre-Block Setup"
     trigger:
       - platform: state
-        entity_id: binary_sensor.wodify_block_starting_soon
+        entity_id: binary_sensor.wodify_class_block_starting_soon
         to: "on"
     action:
       - service: media_player.turn_on
@@ -361,7 +373,7 @@ automation:
   - alias: "Gym Post-Block Shutdown"
     trigger:
       - platform: state
-        entity_id: binary_sensor.wodify_block_just_ended
+        entity_id: binary_sensor.wodify_class_block_just_ended
         to: "on"
     action:
       - service: media_player.turn_off

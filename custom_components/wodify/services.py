@@ -158,9 +158,7 @@ SEND_EMAIL_SCHEMA = vol.Schema(
 )
 
 
-async def _async_handle_send_email(
-    hass: HomeAssistant, call: ServiceCall
-) -> ServiceResponse:
+async def _async_handle_send_email(hass: HomeAssistant, call: ServiceCall) -> ServiceResponse:
     runtime = _get_runtime(hass, call.data["entry_id"])
     try:
         result = await runtime.api.send_email(

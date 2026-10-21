@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from homeassistant.components.button import ButtonEntity
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -29,7 +30,9 @@ class WodifyRefreshButton(ButtonEntity):
     """Button to refresh Wodify data."""
 
     _attr_icon = "mdi:refresh"
-    _attr_name = "Refresh"
+    _attr_has_entity_name = True
+    _attr_translation_key = "refresh"
+    _attr_entity_category = EntityCategory.CONFIG
 
     def __init__(self, coordinator: WodifyDataUpdateCoordinator, config_entry: ConfigEntry) -> None:
         self._coordinator = coordinator

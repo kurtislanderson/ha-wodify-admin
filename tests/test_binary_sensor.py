@@ -40,7 +40,7 @@ class TestClassOngoingBinarySensor:
         sensor = WodifyClassOngoingBinarySensor(mock_coordinator, mock_config_entry)
 
         assert sensor.unique_id == "test_api_key_class_ongoing"
-        assert sensor.name == "Class Ongoing"
+        assert sensor.translation_key == "class_ongoing"
         assert sensor.device_class == BinarySensorDeviceClass.RUNNING
         assert sensor.should_poll is False
         assert sensor.available is True

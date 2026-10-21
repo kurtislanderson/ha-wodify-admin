@@ -311,7 +311,7 @@ class TestSendEmail:
             result = await api_client.send_email("a@x.com", "Hi", "Body", cc=["c@x.com"], bcc=[])
 
             assert result["email_service_email_id"] == 7
-            (key, calls), = mock.requests.items()
+            ((key, calls),) = mock.requests.items()
             assert key[0] == "POST"
             kwargs = calls[0].kwargs
             assert kwargs["json"] == {

@@ -55,9 +55,9 @@ class WodifyClassOngoingBinarySensor(
 ):
     """Binary sensor indicating whether a class is currently ongoing."""
 
-    _attr_should_poll = False
     _attr_device_class = BinarySensorDeviceClass.RUNNING
-    _attr_name = "Class Ongoing"
+    _attr_has_entity_name = True
+    _attr_translation_key = "class_ongoing"
 
     def __init__(self, coordinator: WodifyDataUpdateCoordinator, config_entry: ConfigEntry) -> None:
         super().__init__(coordinator)
@@ -143,9 +143,9 @@ class WodifyClassStartingSoonBinarySensor(
     Turns ON when: now is within `before_class_minutes` of the next class start time.
     """
 
-    _attr_should_poll = False
     _attr_device_class = BinarySensorDeviceClass.OCCUPANCY
-    _attr_name = "Class Starting Soon"
+    _attr_has_entity_name = True
+    _attr_translation_key = "class_starting_soon"
 
     def __init__(self, coordinator: WodifyDataUpdateCoordinator, config_entry: ConfigEntry) -> None:
         super().__init__(coordinator)
@@ -241,9 +241,9 @@ class WodifyBlockStartingSoonBinarySensor(
     Turns ON when: now is within `before_class_minutes` of the first class of the next block.
     """
 
-    _attr_should_poll = False
     _attr_device_class = BinarySensorDeviceClass.OCCUPANCY
-    _attr_name = "Class Block Starting Soon"
+    _attr_has_entity_name = True
+    _attr_translation_key = "block_starting_soon"
 
     def __init__(self, coordinator: WodifyDataUpdateCoordinator, config_entry: ConfigEntry) -> None:
         super().__init__(coordinator)
@@ -373,9 +373,9 @@ class WodifyBlockJustEndedBinarySensor(
     A "block" is a group of back-to-back classes with gaps < 30 minutes between them.
     """
 
-    _attr_should_poll = False
     _attr_device_class = BinarySensorDeviceClass.OCCUPANCY
-    _attr_name = "Class Block Just Ended"
+    _attr_has_entity_name = True
+    _attr_translation_key = "block_just_ended"
 
     def __init__(self, coordinator: WodifyDataUpdateCoordinator, config_entry: ConfigEntry) -> None:
         super().__init__(coordinator)

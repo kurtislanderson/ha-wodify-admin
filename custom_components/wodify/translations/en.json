@@ -84,23 +84,43 @@
   "entity": {
     "sensor": {
       "next_class": {
-        "name": "Next Class"
+        "name": "Next class"
+      },
+      "current_class": {
+        "name": "Current class"
+      },
+      "api_status": {
+        "name": "API status"
+      },
+      "todays_classes": {
+        "name": "Today's classes"
+      },
+      "settings": {
+        "name": "Settings"
       }
     },
     "binary_sensor": {
       "class_ongoing": {
-        "name": "Class Ongoing"
+        "name": "Class ongoing"
       },
       "class_starting_soon": {
-        "name": "Class Block Starting Soon"
+        "name": "Class starting soon"
+      },
+      "block_starting_soon": {
+        "name": "Class block starting soon"
       },
       "block_just_ended": {
-        "name": "Class Block Just Ended"
+        "name": "Class block just ended"
       }
     },
     "calendar": {
       "classes": {
         "name": "Classes"
+      }
+    },
+    "button": {
+      "refresh": {
+        "name": "Refresh"
       }
     }
   },

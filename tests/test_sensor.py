@@ -59,7 +59,7 @@ class TestNextClassSensor:
         sensor = WodifyNextClassSensor(coordinator_with_data, mock_config_entry)
 
         assert sensor.unique_id == "test_api_key_next_class"
-        assert sensor.name == "Next Class"
+        assert sensor.translation_key == "next_class"
         assert sensor.icon == "mdi:weight-lifter"
         assert sensor.should_poll is False
         assert sensor.available is True
@@ -308,7 +308,7 @@ class TestTodaysClassesSensor:
         sensor = WodifyTodaysClassesSensor(mock_coordinator, mock_config_entry)
 
         assert sensor.unique_id == "test_api_key_todays_classes"
-        assert sensor.name == "Today's Classes"
+        assert sensor.translation_key == "todays_classes"
         assert sensor.icon == "mdi:calendar-today"
         assert sensor.should_poll is False
 
@@ -548,7 +548,7 @@ class TestTodaysClassesSensor:
         sensor = WodifyTodaysClassesSensor(mock_coordinator, mock_config_entry)
 
         assert sensor.available is False
-        assert sensor.native_value == "Unavailable"
+        assert sensor.native_value is None
 
 
 class TestSettingsSensor:
@@ -563,7 +563,7 @@ class TestSettingsSensor:
         sensor = WodifySettingsSensor(mock_config_entry)
 
         assert sensor.unique_id == "test_api_key_settings"
-        assert sensor.name == "Settings"
+        assert sensor.translation_key == "settings"
         assert sensor.icon == "mdi:cog"
         assert sensor.should_poll is False
         assert sensor.available is True

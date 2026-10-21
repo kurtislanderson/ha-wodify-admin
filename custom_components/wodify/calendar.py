@@ -33,8 +33,8 @@ async def async_setup_entry(
 class WodifyCalendar(CoordinatorEntity[WodifyDataUpdateCoordinator], CalendarEntity):
     """Calendar showing scheduled Wodify classes."""
 
-    _attr_should_poll = False
-    _attr_name = "Classes"
+    _attr_has_entity_name = True
+    _attr_translation_key = "classes"
 
     def __init__(self, coordinator: WodifyDataUpdateCoordinator, config_entry: ConfigEntry) -> None:
         super().__init__(coordinator)
@@ -74,7 +74,7 @@ class WodifyCalendar(CoordinatorEntity[WodifyDataUpdateCoordinator], CalendarEnt
             description=description,
             location=wodify_class.location_name,
         )
-        event.uid = f"wodify_class_{wodify_class.start_time.strftime('%Y%m%d%H%M')}"
+        event.uid = f"wodify_class_{wodify_class.id}"
         return event
 
     @property
@@ -102,13 +102,10 @@ class WodifyCalendar(CoordinatorEntity[WodifyDataUpdateCoordinator], CalendarEnt
         end = dt_util.as_utc(end_date)
 
         for wodify_class in self._iter_classes():
-            if start <= wodify_class.start_time <= end:
+            if wodify_class.start_time < end and wodify_class.end_time > start:
                 events.append(self._build_event(wodify_class))
 
         return events
-
-    async def async_get_tasks(self, _hass: HomeAssistant) -> list:
-        return []
 
     @property
     def device_info(self) -> DeviceInfo:

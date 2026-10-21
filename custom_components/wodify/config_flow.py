@@ -107,7 +107,9 @@ class WodifyConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
-    async def async_step_locations(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+    async def async_step_locations(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
         errors: dict[str, str] = {}
         options = set(self._location_options)
 
@@ -134,7 +136,9 @@ class WodifyConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
-    async def async_step_programs(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+    async def async_step_programs(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
         errors: dict[str, str] = {}
         options = set(self._program_options)
 
@@ -159,16 +163,16 @@ class WodifyConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
-    async def async_step_options(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+    async def async_step_options(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
         errors: dict[str, str] = {}
 
         if user_input is not None:
             update_interval = int(user_input[CONF_UPDATE_INTERVAL])
             before_minutes = int(user_input[CONF_BEFORE_CLASS_MINUTES])
             after_minutes = int(user_input[CONF_AFTER_BLOCK_MINUTES])
-            block_gap = int(
-                user_input.get(CONF_BLOCK_GAP_MINUTES, DEFAULT_BLOCK_GAP_MINUTES)
-            )
+            block_gap = int(user_input.get(CONF_BLOCK_GAP_MINUTES, DEFAULT_BLOCK_GAP_MINUTES))
 
             if not (MIN_UPDATE_INTERVAL <= update_interval <= MAX_UPDATE_INTERVAL):
                 errors[CONF_UPDATE_INTERVAL] = "invalid_update_interval"
@@ -311,7 +315,9 @@ class WodifyOptionsFlow(config_entries.OptionsFlow):
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         entry = self.config_entry
-        self._locations = list(entry.options.get(CONF_LOCATIONS, entry.data.get(CONF_LOCATIONS, [])))
+        self._locations = list(
+            entry.options.get(CONF_LOCATIONS, entry.data.get(CONF_LOCATIONS, []))
+        )
         self._programs = list(entry.options.get(CONF_PROGRAMS, entry.data.get(CONF_PROGRAMS, [])))
         await self._load_dynamic_options(self.hass)
 
@@ -338,9 +344,7 @@ class WodifyOptionsFlow(config_entries.OptionsFlow):
             update_interval = int(user_input[CONF_UPDATE_INTERVAL])
             before_minutes = int(user_input[CONF_BEFORE_CLASS_MINUTES])
             after_minutes = int(user_input[CONF_AFTER_BLOCK_MINUTES])
-            block_gap = int(
-                user_input.get(CONF_BLOCK_GAP_MINUTES, DEFAULT_BLOCK_GAP_MINUTES)
-            )
+            block_gap = int(user_input.get(CONF_BLOCK_GAP_MINUTES, DEFAULT_BLOCK_GAP_MINUTES))
             exclude_private = user_input[CONF_EXCLUDE_PRIVATE_TRAINING]
             selected_locations = user_input[CONF_LOCATIONS]
             selected_programs = user_input[CONF_PROGRAMS]

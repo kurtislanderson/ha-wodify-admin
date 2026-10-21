@@ -53,9 +53,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: WodifyConfigEntry) -> bo
     update_interval = entry.options.get(CONF_UPDATE_INTERVAL, DEFAULT_UPDATE_INTERVAL)
     before_minutes = entry.options.get(CONF_BEFORE_CLASS_MINUTES, DEFAULT_BEFORE_CLASS_MINUTES)
     after_minutes = entry.options.get(CONF_AFTER_BLOCK_MINUTES, DEFAULT_AFTER_BLOCK_MINUTES)
-    block_gap_minutes = entry.options.get(
-        CONF_BLOCK_GAP_MINUTES, DEFAULT_BLOCK_GAP_MINUTES
-    )
+    block_gap_minutes = entry.options.get(CONF_BLOCK_GAP_MINUTES, DEFAULT_BLOCK_GAP_MINUTES)
     exclude_private = entry.options.get(
         CONF_EXCLUDE_PRIVATE_TRAINING, DEFAULT_EXCLUDE_PRIVATE_TRAINING
     )

@@ -199,9 +199,7 @@ class WodifyDataUpdateCoordinator(DataUpdateCoordinator[list[WodifyClass]]):
         # 2. Decide what to (re)fetch. The search window starts at midnight
         #    today, so every class is today or later.
         today = dt_util.now().date()
-        today_classes = [
-            c for c in classes if not c.is_cancelled and c.start_time.date() == today
-        ]
+        today_classes = [c for c in classes if not c.is_cancelled and c.start_time.date() == today]
         future_uncached = sorted(
             (
                 c

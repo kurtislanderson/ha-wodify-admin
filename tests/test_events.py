@@ -323,12 +323,12 @@ class TestEventManager:
         event_manager = WodifyEventManager(hass, mock_coordinator, 15, 15)
 
         # Mock async_call_later to track scheduling
-        with patch.object(hass, "async_call_later") as mock_call_later:
+        with patch("custom_components.wodify.events.hass_async_call_later") as mock_call_later:
             event_manager.schedule_events()
 
             # Should schedule immediately (0 delay)
             mock_call_later.assert_called()
-            delay = mock_call_later.call_args[0][0]
+            delay = mock_call_later.call_args[0][1]
             assert delay <= 1  # Should fire immediately or within 1 second
 
     async def test_event_manager_logging(self, hass, mock_coordinator_with_events, caplog):

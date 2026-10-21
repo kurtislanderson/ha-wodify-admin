@@ -23,6 +23,7 @@ DEFAULT_COACH_NAME = "Not Available"
 DEFAULT_LOCATION_NAME = "Unknown"
 DEFAULT_PROGRAM_NAME = "Unknown"
 
+
 @dataclass
 class WodifyRuntimeData:
     """Runtime objects stored on the config entry."""

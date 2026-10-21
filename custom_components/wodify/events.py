@@ -23,49 +23,6 @@ from .models import WodifyClass
 _LOGGER = logging.getLogger(__name__)
 
 
-# Older Home Assistant versions exposed ``async_call_later`` as a helper
-# function instead of a method on ``HomeAssistant``. The pytest fixture used in
-# the tests mirrors that behaviour, which means recent HA builds no longer
-# provide ``hass.async_call_later``. To keep the integration compatible (and to
-# make the tests happy) we create a lightweight wrapper when the attribute is
-# missing. The wrapper delegates to the helper module so we still get a
-# ``HassJob`` backed handle that Home Assistant's shutdown checks understand.
-class _CancelHandle:
-    """Simple wrapper around the cancellation callback returned by HA."""
-
-    __slots__ = ("_cancel", "_cancelled")
-
-    def __init__(self, cancel: Callable[[], None]) -> None:
-        self._cancel = cancel
-        self._cancelled = False
-
-    def cancel(self) -> None:
-        if self._cancelled:
-            return
-        self._cancelled = True
-        self._cancel()
-
-
-def _ensure_async_call_later(hass: HomeAssistant) -> None:
-    if hasattr(hass, "async_call_later"):
-        return
-
-    def _async_call_later(
-        delay: float | timedelta,
-        action: Callable[..., None],
-    ):
-        # job_type is explicit on purpose: HassJob infers HassJobType.Executor
-        # for any target that is not @callback / a coroutine function, which
-        # runs it in a worker thread, where async_write_ha_state() raises HA's
-        # thread-safety error and every exact-time sensor update is dropped.
-        job = HassJob(action, cancel_on_shutdown=True, job_type=HassJobType.Callback)
-        cancel = hass_async_call_later(hass, delay, job)
-        return _CancelHandle(cancel)
-
-    # Dynamic shim for HA builds lacking the method; not in HomeAssistant's stubs.
-    hass.async_call_later = _async_call_later  # type: ignore[attr-defined]
-
-
 class _ScheduledEvent:
     """Wrapper around Home Assistant's scheduling helpers."""
 
@@ -78,8 +35,15 @@ class _ScheduledEvent:
         self._hass = hass
         self._cancelled = False
         self._callback = callback
-        # Ensure we always schedule through async_call_later for HA friendly timing
-        self._handle = hass.async_call_later(max(delay, 0), self._run)  # type: ignore[attr-defined]  # shim set in _ensure_async_call_later
+        # job_type is explicit on purpose: HassJob infers HassJobType.Executor
+        # for any target that is not @callback / a coroutine function, which
+        # runs it in a worker thread, where async_write_ha_state() raises HA's
+        # thread-safety error and every exact-time sensor update is dropped.
+        self._cancel_timer = hass_async_call_later(
+            hass,
+            max(delay, 0),
+            HassJob(self._run, cancel_on_shutdown=True, job_type=HassJobType.Callback),
+        )
 
     @callback
     def _run(self, *_: object) -> None:
@@ -95,7 +59,7 @@ class _ScheduledEvent:
         if self._cancelled:
             return
         self._cancelled = True
-        self._handle.cancel()
+        self._cancel_timer()
 
     def cancelled(self) -> bool:
         return self._cancelled
@@ -122,8 +86,6 @@ class WodifyEventManager:
 
         # Link back to the coordinator so cancellation detection can notify us
         coordinator.event_manager = self
-
-        _ensure_async_call_later(hass)
 
     def register_binary_sensors(self, sensors: list[BinarySensorEntity]) -> None:
         """Store references to binary sensors for time-based state updates."""
