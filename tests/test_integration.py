@@ -168,8 +168,6 @@ class TestIntegration:
         if state is not None:
             assert state.state == STATE_UNAVAILABLE
 
-        # Verify data cleaned up
-        assert mock_config_entry.entry_id not in hass.data.get(DOMAIN, {})
 
     async def test_entity_registry_cleanup(self, hass, mock_config_entry, mock_api_responses):
         """Test entity registry is properly cleaned up."""
@@ -195,7 +193,7 @@ class TestIntegration:
         await setup_integration(hass, mock_config_entry, mock_api_responses)
 
         # Get coordinator
-        coordinator = hass.data[DOMAIN][mock_config_entry.entry_id]["coordinator"]
+        coordinator = mock_config_entry.runtime_data.coordinator
 
         # Update coordinator data
         new_class = WodifyClass(
@@ -238,8 +236,8 @@ class TestIntegration:
             await hass.config_entries.async_setup(mock_config_entry.entry_id)
             await hass.async_block_till_done()
 
-            coordinator = hass.data[DOMAIN][mock_config_entry.entry_id]["coordinator"]
-            event_manager = hass.data[DOMAIN][mock_config_entry.entry_id]["event_manager"]
+            coordinator = mock_config_entry.runtime_data.coordinator
+            event_manager = mock_config_entry.runtime_data.event_manager
 
             # Verify coordinator has a listener (the event_manager)
             assert len(coordinator._listeners) >= 1
@@ -302,7 +300,7 @@ class TestIntegration:
             await hass.async_block_till_done()
 
             # Get event manager
-            event_manager = hass.data[DOMAIN][mock_config_entry.entry_id]["event_manager"]
+            event_manager = mock_config_entry.runtime_data.event_manager
 
             # Verify event manager exists and has the right timing values
             assert event_manager is not None
@@ -322,7 +320,7 @@ class TestIntegration:
         await setup_integration(hass, mock_config_entry, mock_api_responses)
 
         # Test refresh service
-        coordinator = hass.data[DOMAIN][mock_config_entry.entry_id]["coordinator"]
+        coordinator = mock_config_entry.runtime_data.coordinator
         coordinator.async_request_refresh = AsyncMock()
 
         await hass.services.async_call(
@@ -356,9 +354,7 @@ class TestIntegration:
             await hass.config_entries.async_setup(mock_config_entry.entry_id)
             await hass.async_block_till_done()
 
-            event_manager = hass.data[DOMAIN][mock_config_entry.entry_id][  # noqa: F841
-                "event_manager"
-            ]
+            event_manager = mock_config_entry.runtime_data.event_manager  # noqa: F841
 
             # Update options
             result = await hass.config_entries.options.async_init(mock_config_entry.entry_id)
@@ -379,7 +375,7 @@ class TestIntegration:
 
             # After options change, event manager gets the updated values from config
             # Get the potentially new event_manager after reload
-            new_event_manager = hass.data[DOMAIN][mock_config_entry.entry_id]["event_manager"]
+            new_event_manager = mock_config_entry.runtime_data.event_manager
             assert new_event_manager.before_class_minutes == 30
             assert new_event_manager.after_block_minutes == 20
 
@@ -431,8 +427,8 @@ class TestIntegration:
 
         # Verify separate coordinators
         assert (
-            hass.data[DOMAIN][entry1.entry_id]["coordinator"]
-            != hass.data[DOMAIN][entry2.entry_id]["coordinator"]
+            entry1.runtime_data.coordinator
+            != entry2.runtime_data.coordinator
         )
 
         # Verify entities have unique IDs

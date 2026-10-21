@@ -3,7 +3,9 @@
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
+from homeassistant.config_entries import ConfigEntryState
 from homeassistant.exceptions import ServiceValidationError
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.wodify.const import (
     CONF_AFTER_BLOCK_MINUTES,
@@ -12,6 +14,7 @@ from custom_components.wodify.const import (
     CONF_PROGRAMS,
     DOMAIN,
 )
+from custom_components.wodify.models import WodifyRuntimeData
 
 
 @pytest.fixture
@@ -20,15 +23,13 @@ def mock_integration_setup(hass, mock_config_entry, mock_coordinator):
     mock_event_manager = Mock()
     mock_event_manager.update_timing = Mock()
 
-    runtime_data = {
-        "coordinator": mock_coordinator,
-        "event_manager": mock_event_manager,
-    }
-
-    hass.data[DOMAIN] = {mock_config_entry.entry_id: runtime_data}
+    mock_config_entry.runtime_data = WodifyRuntimeData(
+        coordinator=mock_coordinator, api=Mock(), event_manager=mock_event_manager
+    )
 
     # Add config entry to hass so services can find it
     mock_config_entry.add_to_hass(hass)
+    mock_config_entry.mock_state(hass, ConfigEntryState.LOADED)
 
     return mock_config_entry, mock_coordinator, mock_event_manager
 
@@ -204,10 +205,13 @@ class TestServices:
         coordinator2 = Mock()
         coordinator2.async_request_refresh = AsyncMock()
 
-        hass.data[DOMAIN] = {
-            entry1_id: {"coordinator": coordinator1, "event_manager": Mock()},
-            entry2_id: {"coordinator": coordinator2, "event_manager": Mock()},
-        }
+        for entry_id, coordinator in ((entry1_id, coordinator1), (entry2_id, coordinator2)):
+            entry = MockConfigEntry(domain=DOMAIN, entry_id=entry_id)
+            entry.runtime_data = WodifyRuntimeData(
+                coordinator=coordinator, api=Mock(), event_manager=Mock()
+            )
+            entry.add_to_hass(hass)
+            entry.mock_state(hass, ConfigEntryState.LOADED)
 
         # Call service for entry1
         await hass.services.async_call(

@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
-
+from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ServiceValidationError
 
@@ -20,6 +19,7 @@ from .const import (
     MAX_EVENT_MINUTES,
     MIN_EVENT_MINUTES,
 )
+from .models import WodifyRuntimeData
 
 _SERVICE_REFRESH = "refresh_now"
 _SERVICE_SET_FILTER = "set_filter"
@@ -27,10 +27,11 @@ _SERVICE_SET_EVENT_TIMING = "set_event_timing"
 _SERVICE_FLAG = "services_registered"
 
 
-def _get_runtime(hass: HomeAssistant, entry_id: str) -> Any:
-    runtime = hass.data.get(DOMAIN, {}).get(entry_id)
-    if runtime is None:
+def _get_runtime(hass: HomeAssistant, entry_id: str) -> WodifyRuntimeData:
+    entry = hass.config_entries.async_get_entry(entry_id)
+    if entry is None or entry.domain != DOMAIN or entry.state is not ConfigEntryState.LOADED:
         raise ServiceValidationError("Config entry not found")
+    runtime: WodifyRuntimeData = entry.runtime_data
     return runtime
 
 
@@ -39,7 +40,7 @@ async def _async_handle_refresh(hass: HomeAssistant, call: ServiceCall) -> None:
     if not entry_id:
         raise ServiceValidationError("entry_id is required")
     runtime = _get_runtime(hass, entry_id)
-    await runtime["coordinator"].async_request_refresh()
+    await runtime.coordinator.async_request_refresh()
 
 
 async def _async_handle_set_filter(hass: HomeAssistant, call: ServiceCall) -> None:
@@ -55,7 +56,7 @@ async def _async_handle_set_filter(hass: HomeAssistant, call: ServiceCall) -> No
         raise ServiceValidationError("At least one program must be provided")
 
     runtime = _get_runtime(hass, entry_id)
-    await runtime["coordinator"].async_set_filters(list(locations), list(programs))
+    await runtime.coordinator.async_set_filters(list(locations), list(programs))
 
     config_entry = hass.config_entries.async_get_entry(entry_id)
     if config_entry is None:
@@ -89,7 +90,7 @@ async def _async_handle_set_event_timing(hass: HomeAssistant, call: ServiceCall)
         )
 
     runtime = _get_runtime(hass, entry_id)
-    runtime["event_manager"].update_timing(before_minutes, after_minutes)
+    runtime.event_manager.update_timing(before_minutes, after_minutes)
 
     config_entry = hass.config_entries.async_get_entry(entry_id)
     if config_entry is None:

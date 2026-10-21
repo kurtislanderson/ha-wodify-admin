@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import logging
 
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import WodifyAPI
@@ -28,20 +28,22 @@ from .const import (
 )
 from .coordinator import WodifyDataUpdateCoordinator
 from .events import WodifyEventManager
+from .models import WodifyConfigEntry, WodifyRuntimeData
 from .services import async_setup_services
 
 _LOGGER = logging.getLogger(__name__)
+
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 
 async def async_setup(hass: HomeAssistant, _config: dict) -> bool:
     """Initial set-up of the integration."""
 
     await async_setup_services(hass)
-    hass.data.setdefault(DOMAIN, {})
     return True
 
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+async def async_setup_entry(hass: HomeAssistant, entry: WodifyConfigEntry) -> bool:
     """Set up Wodify from a config entry."""
 
     # Get configuration from entry (locations/programs can be in data or options)
@@ -97,11 +99,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     coordinator.async_add_listener(_schedule_events_on_update)
 
     # Store runtime data
-    hass.data[DOMAIN][entry.entry_id] = {
-        "coordinator": coordinator,
-        "api": api,
-        "event_manager": event_manager,
-    }
+    entry.runtime_data = WodifyRuntimeData(
+        coordinator=coordinator, api=api, event_manager=event_manager
+    )
 
     # Set up platforms
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
@@ -112,7 +112,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return True
 
 
-async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+async def async_unload_entry(hass: HomeAssistant, entry: WodifyConfigEntry) -> bool:
     """Unload a config entry."""
 
     # Unload platforms
@@ -120,16 +120,11 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     if unload_ok:
         # Clean up event manager
-        if "event_manager" in hass.data[DOMAIN][entry.entry_id]:
-            event_manager = hass.data[DOMAIN][entry.entry_id]["event_manager"]
-            event_manager.cancel_all_events()
-
-        # Remove entry data
-        hass.data[DOMAIN].pop(entry.entry_id)
+        entry.runtime_data.event_manager.cancel_all_events()
 
     return unload_ok
 
 
-async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
+async def async_reload_entry(hass: HomeAssistant, entry: WodifyConfigEntry) -> None:
     """Reload config entry."""
     await hass.config_entries.async_reload(entry.entry_id)

@@ -7,7 +7,7 @@ import pytest
 from homeassistant.util import dt as dt_util
 
 from custom_components.wodify.const import DOMAIN
-from custom_components.wodify.models import WodifyClass
+from custom_components.wodify.models import WodifyClass, WodifyRuntimeData
 from custom_components.wodify.sensor import (
     WodifyNextClassSensor,
     WodifySettingsSensor,
@@ -247,12 +247,9 @@ class TestNextClassSensor:
 
     async def test_sensor_setup(self, hass, mock_config_entry, mock_coordinator):
         """Test sensor setup through async_setup_entry."""
-        # Set up runtime data using hass.data pattern (not runtime_data)
-        hass.data[DOMAIN] = {
-            mock_config_entry.entry_id: {
-                "coordinator": mock_coordinator,
-            }
-        }
+        mock_config_entry.runtime_data = WodifyRuntimeData(
+            coordinator=mock_coordinator, api=Mock(), event_manager=Mock()
+        )
 
         async_add_entities = Mock()
 

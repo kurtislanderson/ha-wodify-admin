@@ -292,12 +292,8 @@ class WodifyOptionsFlow(config_entries.OptionsFlowWithConfigEntry):
         )
 
     async def _load_dynamic_options(self, hass: HomeAssistant) -> None:
-        runtime = hass.data.get(DOMAIN, {}).get(self.config_entry.entry_id)
-        # Handle both dict and object access for api
-        if isinstance(runtime, dict):
-            api = runtime.get("api")
-        else:
-            api = getattr(runtime, "api", None)
+        runtime = getattr(self.config_entry, "runtime_data", None)
+        api = runtime.api if runtime else None
         if api is None:
             session = async_get_clientsession(hass)
             api = WodifyAPI(self.config_entry.data[CONF_API_KEY], session, hass)

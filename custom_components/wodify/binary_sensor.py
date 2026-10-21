@@ -22,18 +22,19 @@ from .const import (
     DOMAIN,
 )
 from .coordinator import WodifyDataUpdateCoordinator, detect_class_blocks
-from .models import WodifyClass
+from .models import WodifyClass, WodifyConfigEntry
+
+PARALLEL_UPDATES = 0
 
 
 async def async_setup_entry(
-    hass: HomeAssistant,
-    config_entry: ConfigEntry,
+    _hass: HomeAssistant,
+    config_entry: WodifyConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up the Wodify binary sensors."""
-    runtime = hass.data[DOMAIN][config_entry.entry_id]
-    coordinator: WodifyDataUpdateCoordinator = runtime["coordinator"]
-    event_manager = runtime.get("event_manager")
+    coordinator = config_entry.runtime_data.coordinator
+    event_manager = config_entry.runtime_data.event_manager
 
     sensors = [
         WodifyClassOngoingBinarySensor(coordinator, config_entry),

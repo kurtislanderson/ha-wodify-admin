@@ -7,7 +7,7 @@ import pytest
 
 from custom_components.wodify.calendar import WodifyCalendar, async_setup_entry
 from custom_components.wodify.const import DOMAIN
-from custom_components.wodify.models import WodifyClass
+from custom_components.wodify.models import WodifyClass, WodifyRuntimeData
 
 
 @pytest.fixture
@@ -239,12 +239,9 @@ class TestCalendar:
 
     async def test_calendar_setup(self, hass, mock_config_entry, mock_coordinator):
         """Test calendar setup through async_setup_entry."""
-        # Set up hass.data with the coordinator
-        hass.data[DOMAIN] = {
-            mock_config_entry.entry_id: {
-                "coordinator": mock_coordinator,
-            }
-        }
+        mock_config_entry.runtime_data = WodifyRuntimeData(
+            coordinator=mock_coordinator, api=Mock(), event_manager=Mock()
+        )
 
         async_add_entities = Mock()
 

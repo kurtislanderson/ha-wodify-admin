@@ -5,8 +5,15 @@ from __future__ import annotations
 from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Self
+from typing import TYPE_CHECKING, Any, Self
 from zoneinfo import ZoneInfo
+
+from homeassistant.config_entries import ConfigEntry
+
+if TYPE_CHECKING:
+    from .api import WodifyAPI
+    from .coordinator import WodifyDataUpdateCoordinator
+    from .events import WodifyEventManager
 
 DEFAULT_COACH_NAME = "Not Available"
 DEFAULT_LOCATION_NAME = "Unknown"
@@ -15,6 +22,18 @@ DEFAULT_PROGRAM_NAME = "Unknown"
 # Wodify API returns times in the gym's local timezone
 # Default to US Eastern since most Wodify gyms are in the US
 DEFAULT_TIMEZONE = ZoneInfo("America/New_York")
+
+
+@dataclass
+class WodifyRuntimeData:
+    """Runtime objects stored on the config entry."""
+
+    coordinator: WodifyDataUpdateCoordinator
+    api: WodifyAPI
+    event_manager: WodifyEventManager
+
+
+WodifyConfigEntry = ConfigEntry[WodifyRuntimeData]
 
 
 def _ensure_timezone(dt: datetime, tz: ZoneInfo | None = None) -> datetime:

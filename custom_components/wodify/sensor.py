@@ -13,19 +13,21 @@ from homeassistant.util import dt as dt_util
 
 from .const import DOMAIN
 from .coordinator import WodifyDataUpdateCoordinator
-from .models import WodifyClass
+from .models import WodifyClass, WodifyConfigEntry
 
 _ICON = "mdi:weight-lifter"
 
 
+PARALLEL_UPDATES = 0
+
+
 async def async_setup_entry(
-    hass: HomeAssistant,
-    config_entry: ConfigEntry,
+    _hass: HomeAssistant,
+    config_entry: WodifyConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up the Wodify sensors."""
-    runtime = hass.data[DOMAIN][config_entry.entry_id]
-    coordinator: WodifyDataUpdateCoordinator = runtime["coordinator"]
+    coordinator = config_entry.runtime_data.coordinator
 
     async_add_entities(
         [

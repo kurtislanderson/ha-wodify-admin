@@ -11,7 +11,7 @@ from custom_components.wodify.binary_sensor import (
     async_setup_entry,
 )
 from custom_components.wodify.const import DOMAIN
-from custom_components.wodify.models import WodifyClass
+from custom_components.wodify.models import WodifyClass, WodifyRuntimeData
 
 
 @pytest.fixture
@@ -203,12 +203,9 @@ class TestClassOngoingBinarySensor:
 
     async def test_binary_sensor_setup(self, hass, mock_config_entry, mock_coordinator):
         """Test binary sensor setup through async_setup_entry."""
-        # Set up runtime data using hass.data pattern (not runtime_data)
-        hass.data[DOMAIN] = {
-            mock_config_entry.entry_id: {
-                "coordinator": mock_coordinator,
-            }
-        }
+        mock_config_entry.runtime_data = WodifyRuntimeData(
+            coordinator=mock_coordinator, api=Mock(), event_manager=Mock()
+        )
 
         async_add_entities = Mock()
 

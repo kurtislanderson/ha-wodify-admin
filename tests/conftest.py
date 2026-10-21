@@ -1,5 +1,6 @@
 """Global fixtures for tests."""
 
+import os
 import threading
 from datetime import UTC, datetime
 from types import SimpleNamespace
@@ -11,19 +12,20 @@ try:  # pragma: no cover - optional dependency in tests
     import pytest_homeassistant_custom_component.plugins as hac_plugins
 except ModuleNotFoundError:  # pragma: no cover
     hac_plugins = SimpleNamespace(threading=threading)
+from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.wodify.api import WodifyAPI
 from custom_components.wodify.const import CONF_API_KEY, DOMAIN
-from custom_components.wodify.models import WodifyClass
+from custom_components.wodify.models import WodifyClass, WodifyRuntimeData
 
 # Enable custom integrations for all tests
 pytest_plugins = "pytest_homeassistant_custom_component"
 
 # Real API key for testing with Wodify API
-REAL_API_KEY = "YfaqPxyQ6e1LIA6yTsMkg7hrdlLbOsaG7E0yUmDG"
+REAL_API_KEY = os.environ.get("WODIFY_API_KEY", "test_api_key")
 
 
 @pytest.fixture(autouse=True)
@@ -126,7 +128,7 @@ async def init_integration(
 
 @pytest.fixture
 async def real_api_setup(hass: HomeAssistant, mock_config_entry: MockConfigEntry):
-    """Set up real API in hass.data for testing."""
+    """Set up real API as entry runtime_data for testing."""
     session = async_get_clientsession(hass)
     api = WodifyAPI(REAL_API_KEY, session, hass)
 
@@ -141,13 +143,10 @@ async def real_api_setup(hass: HomeAssistant, mock_config_entry: MockConfigEntry
     event_manager = Mock()
     event_manager.update_timing = Mock()
 
-    runtime_data = {
-        "coordinator": coordinator,
-        "event_manager": event_manager,
-        "api": api,
-    }
-
-    hass.data[DOMAIN] = {mock_config_entry.entry_id: runtime_data}
+    mock_config_entry.runtime_data = WodifyRuntimeData(
+        coordinator=coordinator, api=api, event_manager=event_manager
+    )
     mock_config_entry.add_to_hass(hass)
+    mock_config_entry.mock_state(hass, ConfigEntryState.LOADED)
 
     return mock_config_entry, coordinator, api

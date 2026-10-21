@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock, Mock
 
 from custom_components.wodify.button import WodifyRefreshButton, async_setup_entry
 from custom_components.wodify.const import DOMAIN
+from custom_components.wodify.models import WodifyRuntimeData
 
 
 class TestRefreshButton:
@@ -53,11 +54,9 @@ class TestRefreshButton:
 
     async def test_button_setup(self, hass, mock_config_entry, mock_coordinator):
         """Test button setup through async_setup_entry."""
-        hass.data[DOMAIN] = {
-            mock_config_entry.entry_id: {
-                "coordinator": mock_coordinator,
-            }
-        }
+        mock_config_entry.runtime_data = WodifyRuntimeData(
+            coordinator=mock_coordinator, api=Mock(), event_manager=Mock()
+        )
 
         async_add_entities = Mock()
 
