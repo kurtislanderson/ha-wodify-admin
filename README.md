@@ -302,10 +302,10 @@ Send an email through Wodify's communications API.
 | Field | Required | Description |
 |-------|----------|-------------|
 | `entry_id` | Yes | The Wodify config entry |
-| `to_email` | Yes | Recipient address |
+| `to_email` | Yes | Recipient; must be a Client, Lead or Drop-In in Wodify |
 | `subject` | Yes | Email subject |
-| `body` | Yes | Email body |
-| `from_email` | No | Sender address; must be a Wodify Staff or Business email |
+| `body` | Yes | Email body, sent as HTML |
+| `from_email` | In practice | Sender; must be the Wodify Business email or a staff email. Wodify rejects sends without it |
 | `cc` | No | List of addresses to copy |
 | `bcc` | No | List of addresses to blind copy |
 
@@ -314,7 +314,10 @@ Send an email through Wodify's communications API.
 Notes:
 - The API key needs the Communications permission in Wodify.
 - Failures are not retried, to avoid sending duplicate emails. Wodify can reject a send with HTTP 200; this surfaces as an error.
-- Body format depends on Wodify; test with your own address first.
+- `body` is HTML: `<b>`, `<p>`, `<ul><li>` and links render, but plain line breaks are
+  dropped, so use `<br>` or `<p>`. Wodify adds an open-tracking pixel.
+- Connected-domain senders (Wodify's email settings) are not accepted as `from_email`
+  unless they are also the Business email or a staff email.
 
 ## Precise Timing
 
