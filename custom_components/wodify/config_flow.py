@@ -7,7 +7,7 @@ from typing import Any
 
 import voluptuous as vol
 from homeassistant import config_entries
-from homeassistant.config_entries import ConfigEntry, ConfigFlowResult
+from homeassistant.config_entries import ConfigEntry, ConfigEntryState, ConfigFlowResult
 from homeassistant.const import CONF_API_KEY
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import config_validation as cv
@@ -270,9 +270,18 @@ class WodifyConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             except ApiError:
                 errors["base"] = "cannot_connect"
             else:
-                return self.async_update_reload_and_abort(
-                    self._get_reauth_entry(), data_updates={CONF_API_KEY: new_key}
+                entry = self._get_reauth_entry()
+                if entry.state is not ConfigEntryState.LOADED:
+                    # Failed setup removed the update listener, so reload here.
+                    return self.async_update_reload_and_abort(
+                        entry, data_updates={CONF_API_KEY: new_key}
+                    )
+                # A loaded entry's update listener reloads it; reloading here too
+                # would reload twice (HA 2026.12 rejects that combination).
+                self.hass.config_entries.async_update_entry(
+                    entry, data={**entry.data, CONF_API_KEY: new_key}
                 )
+                return self.async_abort(reason="reauth_successful")
 
         return self.async_show_form(
             step_id="reauth_confirm",

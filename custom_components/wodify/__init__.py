@@ -85,8 +85,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: WodifyConfigEntry) -> bo
     # Link event manager to coordinator for cancellation handling
     coordinator.event_manager = event_manager
 
-    # Listen for option updates (registered before the first refresh so a failed
-    # setup still reloads on option changes)
+    # Reload on option/data updates (removed automatically if setup fails)
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))
 
     # Perform initial data fetch

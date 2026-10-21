@@ -187,6 +187,50 @@ class TestConfigFlow:
         # Verify entry was updated
         assert mock_config_entry.data[CONF_API_KEY] == "new_api_key"
 
+    @pytest.mark.parametrize(
+        ("state", "has_listener"),
+        [
+            (config_entries.ConfigEntryState.LOADED, True),
+            (config_entries.ConfigEntryState.SETUP_ERROR, False),
+        ],
+    )
+    async def test_reauth_reloads_exactly_once(
+        self,
+        hass,
+        mock_config_entry,
+        mock_wodify_api,  # noqa: ARG002
+        state,
+        has_listener,
+    ):
+        """Reauth reloads once, whether or not the update listener is registered."""
+        from custom_components.wodify import async_reload_entry
+
+        mock_config_entry.add_to_hass(hass)
+        mock_config_entry.mock_state(hass, state)
+        if has_listener:
+            mock_config_entry.runtime_data = Mock()
+            mock_config_entry.add_update_listener(async_reload_entry)
+
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN,
+            context={
+                "source": config_entries.SOURCE_REAUTH,
+                "entry_id": mock_config_entry.entry_id,
+            },
+            data=mock_config_entry.data,
+        )
+        with patch.object(
+            hass.config_entries, "async_reload", AsyncMock(return_value=True)
+        ) as reload:
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"], {CONF_API_KEY: "new_api_key"}
+            )
+            await hass.async_block_till_done()
+
+        assert result["reason"] == "reauth_successful"
+        assert mock_config_entry.data[CONF_API_KEY] == "new_api_key"
+        assert reload.await_count == 1
+
     async def test_reauth_flow_invalid_auth(self, hass, mock_config_entry, mock_wodify_api):
         """Test reauth flow with invalid credentials."""
         mock_config_entry.add_to_hass(hass)
